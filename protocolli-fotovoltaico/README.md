@@ -15,6 +15,8 @@ Python **senza dipendenze esterne** in cui vedi ogni byte che viaggia sulla rete
 | 6 | [Esercizi](06-esercizi.md) | 8 esercizi guidati sul laboratorio |
 | 7 | [Glossario e risorse](07-glossario-e-risorse.md) | termini, standard, strumenti |
 
+**Versione web per tablet e telefono**: [`web/corso.html`](web/corso.html) contiene il corso e un laboratorio interattivo in JavaScript, senza bisogno di Python (vedi [`web/README.md`](web/README.md)).
+
 Suggerimento: dopo ogni lezione fai gli esercizi corrispondenti — i protocolli si capiscono
 davvero solo guardando i frame.
 

@@ -1,0 +1,2062 @@
+<title>Protocolli del Fotovoltaico</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: quaderno tecnico a due colonne (indice fisso + contenuto), una colonna su telefono.
+   Colore: carta fredda, inchiostro blu-ardesia, ambra solare come accento, colori per campo dei byte. */
+:root {
+  --paper: #F3F6F7;
+  --surface: #FFFFFF;
+  --ink: #15212B;
+  --muted: #586773;
+  --line: #D5DDE2;
+  --accent: #A35F00;
+  --accent-soft: #FBEFDC;
+  --wire: #0D7480;
+  --wire-soft: #E1F2F3;
+  --f-mbap: #3B5797;
+  --f-fc: #A35F00;
+  --f-addr: #0D7480;
+  --f-data: #56661F;
+  --f-crc: #A0325A;
+  --good: #23784A;
+  --good-soft: #E2F3E8;
+  --bad: #B3261E;
+  --bad-soft: #FBE6E4;
+  --font-display: "Barlow Semi Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0E151B; --surface: #151F28; --ink: #E2E9EE; --muted: #93A2AD; --line: #283642;
+    --accent: #F0A53C; --accent-soft: #352610; --wire: #4FC4CD; --wire-soft: #11303A;
+    --f-mbap: #93AAE9; --f-fc: #F0A53C; --f-addr: #4FC4CD; --f-data: #B9CB78; --f-crc: #EB8EAD;
+    --good: #6BCB91; --good-soft: #143424; --bad: #F2897F; --bad-soft: #3B1714;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0E151B; --surface: #151F28; --ink: #E2E9EE; --muted: #93A2AD; --line: #283642;
+  --accent: #F0A53C; --accent-soft: #352610; --wire: #4FC4CD; --wire-soft: #11303A;
+  --f-mbap: #93AAE9; --f-fc: #F0A53C; --f-addr: #4FC4CD; --f-data: #B9CB78; --f-crc: #EB8EAD;
+  --good: #6BCB91; --good-soft: #143424; --bad: #F2897F; --bad-soft: #3B1714;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink);
+  font: 16px/1.6 var(--font-body);
+  -webkit-text-size-adjust: 100%;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 10; background: var(--surface);
+}
+a { color: var(--wire); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; text-wrap: balance; margin: 0; }
+code, pre, .mono { font-family: var(--font-mono); }
+
+/* ---------- header ---------- */
+.topbar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--surface); border-bottom: 1px solid var(--line);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.topbar-inner { display: flex; align-items: center; gap: 16px; min-height: 52px; max-width: 1240px; margin: 0 auto; }
+.brand { font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; letter-spacing: .01em; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.brand span { color: var(--accent); }
+.topnav { display: none; overflow-x: auto; gap: 6px; padding-bottom: 10px; scrollbar-width: none; }
+.topnav::-webkit-scrollbar { display: none; }
+
+/* ---------- shell ---------- */
+.shell {
+  display: grid; grid-template-columns: 1fr; gap: 32px;
+  max-width: 1240px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 64px;
+}
+.sidenav { display: none; }
+.navlink {
+  display: flex; gap: 10px; align-items: baseline;
+  padding: 8px 12px; border-radius: 6px; color: var(--ink); text-decoration: none;
+  font-size: .95rem; white-space: nowrap;
+}
+.navlink .n { font-family: var(--font-mono); font-size: .75rem; color: var(--muted); min-width: 1.6em; }
+.navlink:hover { background: var(--wire-soft); }
+.navlink[aria-current="page"] { background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+.navlink[aria-current="page"] .n { color: var(--accent); }
+.navgroup { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 16px 12px 4px; }
+.topnav .navlink { border: 1px solid var(--line); padding: 6px 12px; }
+.topnav .navlink .n { min-width: 0; }
+
+@media (min-width: 900px) {
+  .shell { grid-template-columns: 230px minmax(0, 1fr); }
+  .sidenav { display: block; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 68px); align-self: start; }
+}
+@media (max-width: 899px) {
+  .topbar-inner { flex-wrap: wrap; }
+  .topnav { display: flex; width: 100%; }
+}
+
+main { min-width: 0; }
+.view[hidden] { display: none; }
+
+/* ---------- lesson typography ---------- */
+.prose { max-width: 46rem; }
+.prose h1 { font-size: clamp(1.8rem, 1.2rem + 2.2vw, 2.5rem); margin-bottom: 20px; }
+.prose h2 { font-size: 1.45rem; margin: 40px 0 12px; padding-top: 16px; border-top: 1px solid var(--line); }
+.prose h3 { font-size: 1.15rem; margin: 28px 0 8px; }
+.prose p, .prose li { max-width: 68ch; }
+.prose ul, .prose ol { padding-left: 1.3em; }
+.prose li + li { margin-top: 4px; }
+.prose code { font-size: .86em; background: var(--wire-soft); padding: 1px 5px; border-radius: 4px; }
+.prose pre code { background: none; padding: 0; font-size: inherit; }
+.prose blockquote {
+  margin: 20px 0; padding: 12px 16px; background: var(--accent-soft);
+  border-radius: 6px; color: var(--ink);
+}
+.prose blockquote p { margin: 0; }
+.prose blockquote p + p { margin-top: 8px; }
+pre.code {
+  overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  padding: 14px 16px; font-size: .8rem; line-height: 1.45;
+}
+.tbl { overflow-x: auto; margin: 16px 0; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: var(--paper); }
+tr:last-child td { border-bottom: 0; }
+td { font-variant-numeric: tabular-nums; }
+
+.pager { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); max-width: 46rem; }
+.pager a { text-decoration: none; font-weight: 600; }
+.pager small { display: block; color: var(--muted); font-weight: 400; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; }
+
+/* ---------- home ---------- */
+.hero { max-width: 46rem; padding-block: 8px 8px; }
+.eyebrow { font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; color: var(--accent); font-weight: 600; }
+.hero h1 { font-size: clamp(2.1rem, 1.3rem + 3vw, 3.1rem); margin: 8px 0 14px; }
+.hero p { font-size: 1.08rem; color: var(--muted); max-width: 60ch; margin: 0; }
+.frame-demo { margin-top: 24px; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; max-width: 46rem; }
+.frame-demo .cap { font-size: .8rem; color: var(--muted); margin-top: 10px; }
+.path { list-style: none; padding: 0; margin: 32px 0 0; max-width: 46rem; display: grid; gap: 0; border-top: 1px solid var(--line); }
+.path li { border-bottom: 1px solid var(--line); }
+.path a { display: grid; grid-template-columns: 2.6rem 1fr; gap: 4px 12px; padding: 14px 4px; text-decoration: none; color: var(--ink); }
+.path a:hover { background: var(--surface); }
+.path .num { font-family: var(--font-mono); color: var(--accent); font-weight: 600; grid-row: span 2; padding-top: 2px; }
+.path .t { font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; }
+.path .d { color: var(--muted); font-size: .92rem; }
+.note { max-width: 46rem; margin-top: 28px; font-size: .92rem; color: var(--muted); }
+
+/* ---------- bytes ---------- */
+.bytes { display: flex; flex-wrap: wrap; gap: 6px 10px; font-family: var(--font-mono); font-size: .86rem; line-height: 1.3; }
+.seg { display: inline-flex; flex-direction: column; gap: 2px; }
+.seg b { font-weight: 600; letter-spacing: .04em; border-bottom: 3px solid currentColor; padding-bottom: 2px; white-space: nowrap; }
+.seg i { font-style: normal; font-family: var(--font-body); font-size: .66rem; color: var(--muted); white-space: nowrap; }
+.c-mbap { color: var(--f-mbap); } .c-fc { color: var(--f-fc); } .c-addr { color: var(--f-addr); }
+.c-data { color: var(--f-data); } .c-crc { color: var(--f-crc); } .c-exc { color: var(--bad); }
+
+/* ---------- lab ---------- */
+.labhead { max-width: 60rem; }
+.labhead h1 { font-size: clamp(1.8rem, 1.2rem + 2.2vw, 2.5rem); margin-bottom: 8px; }
+.labhead p { color: var(--muted); margin: 0 0 16px; max-width: 68ch; }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+.tab { padding: 10px 14px; text-decoration: none; color: var(--muted); font-weight: 600; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+.tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
+.grid2 { display: grid; gap: 20px; grid-template-columns: 1fr; }
+@media (min-width: 1100px) { .grid2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; min-width: 0; }
+.panel h2 { font-size: 1.15rem; margin-bottom: 4px; }
+.panel .sub { color: var(--muted); font-size: .88rem; margin: 0 0 12px; }
+.stack { display: grid; gap: 20px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+button.btn {
+  font: 600 .9rem var(--font-body); padding: 9px 14px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--paper); color: var(--ink); min-height: 40px;
+}
+button.btn:hover { border-color: var(--wire); }
+button.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+button.btn.danger { color: var(--bad); }
+button.btn[aria-pressed="true"] { background: var(--wire-soft); border-color: var(--wire); }
+label.fld { display: grid; gap: 4px; font-size: .8rem; color: var(--muted); }
+input[type="text"], input[type="number"], select {
+  font: .95rem var(--font-mono); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--line);
+  background: var(--paper); color: var(--ink); min-height: 40px; max-width: 100%;
+}
+input[type="text"] { width: 100%; }
+input[type="range"] { accent-color: var(--accent); width: 180px; max-width: 100%; }
+.big { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: flex-end; }
+.kv { display: grid; gap: 2px; }
+.kv .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.kv .v { font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.kv .v small { font-size: .95rem; color: var(--muted); font-weight: 600; }
+.pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .78rem; font-weight: 600; letter-spacing: .03em; background: var(--wire-soft); color: var(--wire); }
+.pill.st-4 { background: var(--good-soft); color: var(--good); }
+.pill.st-5 { background: var(--accent-soft); color: var(--accent); }
+.pill.st-2, .pill.st-8 { background: var(--paper); color: var(--muted); }
+.pill.st-7 { background: var(--bad-soft); color: var(--bad); }
+svg.chart { width: 100%; height: auto; display: block; }
+svg.chart .grid { stroke: var(--line); stroke-width: 1; }
+svg.chart .axis { fill: var(--muted); font: 11px var(--font-body); }
+svg.chart .l-main { stroke: var(--accent); stroke-width: 2.2; fill: none; }
+svg.chart .l-sp { stroke: var(--wire); stroke-width: 1.6; stroke-dasharray: 6 4; fill: none; }
+svg.chart .l-av { stroke: var(--muted); stroke-width: 1.2; fill: none; opacity: .6; }
+svg.chart .area { fill: var(--accent); opacity: .12; }
+svg.chart .dot { fill: var(--accent); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .8rem; color: var(--muted); margin-top: 6px; }
+.legend span::before { content: ""; display: inline-block; width: 14px; height: 3px; margin-right: 6px; vertical-align: middle; background: currentColor; }
+.legend .lg-main { color: var(--accent); } .legend .lg-sp { color: var(--wire); } .legend .lg-av { color: var(--muted); }
+.trace { display: grid; gap: 10px; max-height: 520px; overflow-y: auto; }
+.tx { border-left: 3px solid var(--line); padding: 4px 0 4px 10px; display: grid; gap: 6px; min-width: 0; }
+.tx.req { border-left-color: var(--wire); } .tx.resp { border-left-color: var(--accent); } .tx.err { border-left-color: var(--bad); }
+.tx .dir { font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+.tx .exp { font-size: .84rem; }
+.fieldlegend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .78rem; margin: 4px 0 12px; }
+.fieldlegend span { font-weight: 600; }
+.result { font-size: .9rem; padding: 10px 12px; border-radius: 6px; background: var(--paper); }
+.result.bad { background: var(--bad-soft); color: var(--ink); }
+.result.good { background: var(--good-soft); color: var(--ink); }
+.muted { color: var(--muted); }
+.decoded { font-family: var(--font-mono); font-size: .82rem; white-space: pre-wrap; margin: 8px 0 0; color: var(--ink); }
+.session { display: grid; gap: 14px; }
+.step { display: grid; gap: 6px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.step:last-child { border-bottom: 0; }
+.step .who { font-weight: 600; font-size: .92rem; }
+.invcards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.invcard { border: 1px solid var(--line); border-radius: 6px; padding: 12px; display: grid; gap: 6px; }
+.invcard .h { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-weight: 600; font-size: .9rem; }
+.mini { font-size: .82rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.log { font-family: var(--font-mono); font-size: .78rem; max-height: 170px; overflow-y: auto; background: var(--paper); border-radius: 6px; padding: 8px 10px; white-space: pre; overflow-x: auto; }
+details.sol { margin-top: 10px; }
+details.sol summary { cursor: pointer; font-weight: 600; color: var(--wire); }
+details.sol div { padding: 8px 0 0; }
+.ex { padding: 20px 0; border-bottom: 1px solid var(--line); }
+.ex h2 { font-size: 1.25rem; margin-bottom: 8px; }
+.ex ol { padding-left: 1.3em; }
+td.r { text-align: right; }
+td.nd { color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+</style>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="#percorso">Protocolli <span>FV</span></a>
+    <nav class="topnav" id="topnav" aria-label="Sezioni"></nav>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="sidenav" id="sidenav" aria-label="Indice del corso"></nav>
+  <main id="main">
+
+    <!-- ===================== HOME ===================== -->
+    <section class="view" id="v-percorso">
+      <div class="hero">
+        <div class="eyebrow">Percorso di studio</div>
+        <h1>Dal cavo RS-485 al controllore centrale d'impianto</h1>
+        <p>Come comunicano inverter, contatori, datalogger, portali di monitoraggio e controllori d'impianto. Cinque lezioni, un laboratorio che gira nel browser ed esercizi con soluzione.</p>
+      </div>
+      <div class="frame-demo" aria-label="Esempio di frame Modbus TCP">
+        <div class="bytes" id="home-frame"></div>
+        <div class="cap">Una vera richiesta Modbus TCP: «leggi 50 registri dall'indirizzo 40072», cioè i dati dell'inverter nel modello SunSpec 103. Alla fine del corso saprai leggerla a colpo d'occhio.</div>
+      </div>
+      <ol class="path">
+        <li><a href="#fondamenti"><span class="num">01</span><span class="t">Fondamenti</span><span class="d">Architettura di un impianto, livelli, RS-485, polling contro eventi, trappole nei dati</span></a></li>
+        <li><a href="#modbus"><span class="num">02</span><span class="t">Modbus RTU e TCP</span><span class="d">Frame byte per byte, function code, eccezioni, CRC, gateway, buone pratiche</span></a></li>
+        <li><a href="#sunspec"><span class="num">03</span><span class="t">SunSpec</span><span class="d">Mappe standard degli inverter, discovery, scale factor, modelli 1, 103 e 123</span></a></li>
+        <li><a href="#monitoraggio"><span class="num">04</span><span class="t">Portali di monitoraggio</span><span class="d">Datalogger, HTTPS, MQTT, SFTP, API REST, KPI e qualità del dato</span></a></li>
+        <li><a href="#controllo"><span class="num">05</span><span class="t">Controllore d'impianto e rete</span><span class="d">PPC e CCI, IEC 60870-5-104, IEC 61850, CEI 0-16 Allegati O e T</span></a></li>
+        <li><a href="#lab-inverter"><span class="num">06</span><span class="t">Laboratorio</span><span class="d">Inverter SunSpec simulato, controllore d'impianto, Modbus RTU, IEC 104</span></a></li>
+        <li><a href="#esercizi"><span class="num">07</span><span class="t">Esercizi</span><span class="d">Otto esercizi guidati sul laboratorio, con soluzione</span></a></li>
+      </ol>
+      <p class="note">Consiglio: dopo ogni lezione apri il laboratorio e fai l'esercizio corrispondente. I protocolli si capiscono davvero guardando i frame. Il laboratorio simula tutto nel browser e non si collega a nessun impianto reale.</p>
+    </section>
+
+    <!-- ===================== LESSONS ===================== -->
+    <section class="view prose" id="v-fondamenti" hidden><h1>Lezione 1 — Fondamenti: come "parlano" i dispositivi di un impianto</h1>
+<h2>1.1 La mappa di un impianto fotovoltaico</h2>
+<p>Prima dei protocolli, conviene avere chiaro <strong>chi parla con chi</strong>:</p>
+<pre class="code"><code>                         INTERNET / RETE DEL GESTORE
+        ┌─────────────────────────┬───────────────────────────────┐
+        │                         │                               │
+  Portale di monitoraggio   Gestore di rete (DSO, es.      Operatore O&amp;M,
+  (cloud del produttore     e-distribuzione) / TSO (Terna) SCADA di flotta
+  o indipendente)                 ▲  IEC 61850 / IEC 104          ▲
+        ▲  HTTPS, MQTT, SFTP      │                               │
+        │                         │                               │
+  ┌─────┴──────┐           ┌──────┴───────────┐                   │
+  │ Datalogger │           │ Controllore      │◄──────────────────┘
+  │ / gateway  │           │ d'impianto       │   Modbus TCP, IEC 104, OPC UA
+  └─────┬──────┘           │ (PPC / CCI)      │
+        │                  └──────┬───────────┘
+        │   Modbus RTU (RS-485) / Modbus TCP / protocolli proprietari
+  ──────┴─────────────────────────┴──────────────────────────────────── rete di campo
+     │            │             │              │               │
+  Inverter    Inverter     Contatore /     Stazione        Protezione
+  di stringa  centralizz.  analizzatore    meteo           (SPI / SPG)
+                           al POI          (piranometro)
+</code></pre>
+<p>Tre "mondi" con esigenze diverse:</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Mondo</th>
+<th>Esigenza principale</th>
+<th>Tempi tipici</th>
+<th>Protocolli tipici</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Campo</strong> (inverter, sensori, contatori)</td>
+<td>leggere/scrivere valori in modo semplice ed economico</td>
+<td>0,1–5 s</td>
+<td>Modbus RTU/TCP, SunSpec, proprietari</td>
+</tr>
+<tr>
+<td><strong>Monitoraggio</strong> (portali, O&amp;M)</td>
+<td>raccogliere storici, KPI, allarmi; robustezza ai buchi di rete</td>
+<td>1–15 min</td>
+<td>HTTPS/REST, MQTT, FTP/SFTP con CSV</td>
+</tr>
+<tr>
+<td><strong>Controllo e rete</strong> (PPC, CCI, gestore)</td>
+<td>comandi affidabili, tempi certi, sicurezza, tracciabilità</td>
+<td>100 ms – pochi s</td>
+<td>IEC 61850, IEC 60870-5-104, (DNP3 in Nord America)</td>
+</tr>
+</tbody>
+</table></div>
+<h2>1.2 I livelli: dal cavo al significato</h2>
+<p>Un protocollo industriale va sempre letto "a strati". Esempio: un inverter letto da un datalogger via Ethernet.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Strato</th>
+<th>Domanda a cui risponde</th>
+<th>Esempio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fisico</td>
+<td>Che cavo, che tensioni?</td>
+<td>RS-485 a 2 fili, Ethernet in rame, fibra ottica, 4G</td>
+</tr>
+<tr>
+<td>Collegamento</td>
+<td>Come si delimita un messaggio? Chi parla?</td>
+<td>Frame RTU con CRC; Ethernet MAC</td>
+</tr>
+<tr>
+<td>Rete/trasporto</td>
+<td>Come arriva a destinazione?</td>
+<td>IP + TCP (porta 502 per Modbus, 2404 per IEC 104, 102 per IEC 61850 MMS)</td>
+</tr>
+<tr>
+<td>Applicazione</td>
+<td>Che operazione faccio?</td>
+<td>"Leggi 50 registri da 40072" (Modbus FC03)</td>
+</tr>
+<tr>
+<td><strong>Modello dati</strong></td>
+<td>Cosa significano quei numeri?</td>
+<td>"Il registro 40084 è la potenza attiva in W × 10^SF" (SunSpec)</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p><strong>Idea chiave</strong>: Modbus ti dice <em>come</em> leggere un registro, ma non <em>cosa</em> ci trovi dentro.
+Per questo esistono i <strong>modelli dati</strong> (SunSpec per Modbus, IEC 61850 per il mondo delle
+sottostazioni). Metà dei problemi pratici nasce dallo strato "modello dati", non dal cavo.</p>
+</blockquote>
+<h2>1.3 RS-485: il bus seriale ancora ovunque</h2>
+<ul>
+<li>Coppia di fili intrecciata (+ riferimento comune), segnale <strong>differenziale</strong> → resiste ai disturbi.</li>
+<li>Fino a ~1200 m e 32 "carichi unitari" per segmento (di più con transceiver a carico ridotto).</li>
+<li>Topologia <strong>a catena (daisy chain)</strong>, non a stella. Le derivazioni lunghe creano riflessioni.</li>
+<li><strong>Terminazione</strong> da 120 Ω ai due estremi del bus (solo ai due estremi!).</li>
+<li><strong>Polarizzazione</strong> (bias) per tenere la linea in uno stato definito quando nessuno trasmette.</li>
+<li>Half-duplex: parla uno alla volta → serve un <strong>master</strong> che decide i turni.</li>
+</ul>
+<p>Problemi tipici sul campo: A/B invertiti (i produttori non usano la stessa convenzione!),
+terminazioni mancanti o in eccesso, schermo collegato a terra in più punti, velocità/parità
+diverse tra dispositivi, due dispositivi con lo stesso indirizzo.</p>
+<h2>1.4 Paradigmi di comunicazione</h2>
+<ol>
+<li><strong>Master/slave (client/server) a polling</strong> — Modbus. Il master chiede, lo slave risponde. Semplice,
+   prevedibile, ma il master deve chiedere tutto continuamente anche se nulla cambia.</li>
+<li><strong>Report spontanei / a eventi</strong> — IEC 60870-5-104, IEC 61850 (report, GOOSE), DNP3. Il dispositivo
+   invia i dati quando cambiano oltre una soglia (<em>deadband</em>) o periodicamente. Meno traffico,
+   reazione più rapida agli eventi, timestamp alla sorgente.</li>
+<li><strong>Publish/subscribe</strong> — MQTT. Chi produce dati li pubblica su un <em>topic</em> presso un <em>broker</em>;
+   chi è interessato si iscrive. Ottimo verso il cloud: il datalogger apre la connessione verso
+   l'esterno (niente porte aperte in ingresso nell'impianto).</li>
+<li><strong>Request/response su HTTP (REST)</strong> — le API dei portali. Comodo per integrare software, non
+   pensato per il tempo reale.</li>
+</ol>
+<h2>1.5 Rappresentazione dei dati: dove si sbaglia sempre</h2>
+<ul>
+<li><strong>Endianness</strong>: Modbus trasmette i registri a 16 bit in <em>big-endian</em>; IEC 104 usa <em>little-endian</em>.</li>
+<li><strong>Word order</strong> per valori a 32 bit (float, contatori): alcuni dispositivi mettono prima la word
+  alta, altri la bassa ("word swap"). SunSpec impone la word alta per prima.</li>
+<li><strong>Signed/unsigned</strong>: 65534 letto come unsigned è -2 come signed (complemento a due).</li>
+<li><strong>Scale factor / moltiplicatori</strong>: 2301 può significare 230,1 V.</li>
+<li><strong>Indirizzi base 0 o base 1</strong>: "registro 40001" nella documentazione può essere l'indirizzo 40000
+  nel frame (vedi Lezione 2).</li>
+<li><strong>Valori "non implementato"</strong>: 0xFFFF, 0x8000, NaN — da non trasformare in numeri sul portale.</li>
+<li><strong>Unità e convenzioni di segno</strong>: potenza reattiva induttiva/capacitiva, energia immessa/prelevata.</li>
+</ul>
+<h2>Cosa portarti a casa</h2>
+<p>Quando affronti un nuovo dispositivo chiediti sempre, in quest'ordine:
+mezzo fisico → parametri di collegamento (indirizzo, baud, parità / IP, porta) →
+protocollo → <strong>mappa dei registri / modello dati</strong> → tipi, scale, unità → frequenza di lettura.</p></section>
+    <section class="view prose" id="v-modbus" hidden><h1>Lezione 2 — Modbus RTU e Modbus TCP, byte per byte</h1>
+<p>Modbus (1979) è il protocollo più diffuso nel fotovoltaico perché è semplice, aperto e
+supportato da ogni dispositivo. Lo trovi tra datalogger e inverter, tra PPC e inverter,
+verso contatori, analizzatori di rete, stazioni meteo, string box.</p>
+<h2>2.1 Il modello dati di Modbus: quattro tabelle</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Tabella</th>
+<th>Dimensione</th>
+<th>Accesso</th>
+<th>Function code tipici</th>
+<th>Uso nel FV</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Coils</td>
+<td>1 bit</td>
+<td>lettura/scrittura</td>
+<td>01, 05, 15</td>
+<td>comandi on/off (raro)</td>
+</tr>
+<tr>
+<td>Discrete inputs</td>
+<td>1 bit</td>
+<td>sola lettura</td>
+<td>02</td>
+<td>stati digitali</td>
+</tr>
+<tr>
+<td><strong>Input registers</strong></td>
+<td>16 bit</td>
+<td>sola lettura</td>
+<td><strong>04</strong></td>
+<td>misure (alcuni produttori)</td>
+</tr>
+<tr>
+<td><strong>Holding registers</strong></td>
+<td>16 bit</td>
+<td>lettura/scrittura</td>
+<td><strong>03, 06, 16</strong></td>
+<td>misure e comandi (SunSpec usa solo questi)</td>
+</tr>
+</tbody>
+</table></div>
+<p>Nella documentazione trovi spesso la notazione "Modicon":
+<code>0xxxx</code> coils, <code>1xxxx</code> discrete inputs, <code>3xxxx</code> input registers, <code>4xxxx</code> holding registers.
+Quindi "registro 40001" significa: <em>holding register numero 1</em> → <strong>indirizzo 0 nel frame</strong>.
+SunSpec invece indica direttamente l'indirizzo di protocollo <strong>40000</strong> (cioè "registro 40001").</p>
+<blockquote>
+<p>Se leggi valori "sfasati di uno" (es. trovi lo scale factor dove ti aspetti la potenza),
+quasi sempre è un problema di indirizzamento base 0 / base 1.</p>
+</blockquote>
+<h2>2.2 La PDU: uguale in RTU e TCP</h2>
+<p>La <em>Protocol Data Unit</em> è la parte comune: <code>function code (1 byte) + dati</code>.</p>
+<p><strong>Richiesta FC03</strong> – leggi 50 holding register a partire da 40072 (= 0x9C88):</p>
+<pre class="code"><code>03 9C 88 00 32
+│  └─┬─┘ └─┬─┘
+│    │     └── quantità: 0x0032 = 50 registri
+│    └──────── indirizzo iniziale: 0x9C88 = 40072
+└───────────── function code 03 = Read Holding Registers
+</code></pre>
+<p><strong>Risposta</strong>: <code>03 64 &lt;100 byte di dati&gt;</code> → FC, byte count (0x64 = 100), poi i registri in big-endian.</p>
+<p><strong>Risposta di eccezione</strong>: <code>83 02</code> → FC con il bit alto a 1 (0x03 | 0x80) e codice di errore:</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Codice</th>
+<th>Nome</th>
+<th>Causa tipica</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>01</td>
+<td>Illegal function</td>
+<td>il dispositivo non supporta quella funzione (es. FC04 invece di FC03)</td>
+</tr>
+<tr>
+<td>02</td>
+<td>Illegal data address</td>
+<td>indirizzo inesistente, o lettura che "sconfina" in una zona vuota</td>
+</tr>
+<tr>
+<td>03</td>
+<td>Illegal data value</td>
+<td>valore fuori range, quantità &gt; 125</td>
+</tr>
+<tr>
+<td>04</td>
+<td>Server device failure</td>
+<td>errore interno</td>
+</tr>
+<tr>
+<td>06</td>
+<td>Server busy</td>
+<td>riprova più tardi</td>
+</tr>
+<tr>
+<td>0B</td>
+<td>Gateway target failed to respond</td>
+<td>il gateway TCP→RTU non ha avuto risposta dallo slave seriale</td>
+</tr>
+</tbody>
+</table></div>
+<p>Limiti: max <strong>125 registri</strong> per lettura, <strong>123</strong> per scrittura multipla.</p>
+<h2>2.3 Modbus RTU (seriale, RS-485)</h2>
+<pre class="code"><code>[indirizzo slave 1 byte][PDU][CRC-16 2 byte, byte basso per primo]
+ 01                     03 9C 88 00 32   6A 65
+</code></pre>
+<ul>
+<li>Indirizzi slave 1–247 (0 = broadcast, solo scritture, nessuna risposta).</li>
+<li>Fine frame riconosciuta da <strong>3,5 caratteri di silenzio</strong> (≈ 4 ms a 9600 baud).</li>
+<li>Parametri da far combaciare: baud (9600 / 19200 / 38400…), bit di dati (8), parità (E/N/O),
+  bit di stop. Lo standard vuole 11 bit per carattere (8E1 o 8N2), ma tanti dispositivi usano 8N1.</li>
+<li>Il <strong>CRC</strong> protegge dagli errori di linea: un frame corrotto viene scartato <em>in silenzio</em>
+  → il master vede un <strong>timeout</strong>, non un errore.</li>
+</ul>
+<p>Prova nel <a href="#lab-rtu">laboratorio Modbus RTU</a>: calcolo del CRC, tempi del bus, conversione TCP→RTU.</p>
+<h2>2.4 Modbus TCP (Ethernet)</h2>
+<pre class="code"><code>[Transaction ID 2][Protocol ID 2 = 0][Length 2][Unit ID 1][PDU]
+ 00 07             00 00              00 06     01         03 9C 88 00 32
+</code></pre>
+<ul>
+<li>Porta TCP <strong>502</strong>. Niente CRC (ci pensa TCP).</li>
+<li><strong>Transaction ID</strong>: il client lo incrementa, il server lo ricopia → abbina risposte e richieste.</li>
+<li><strong>Unit ID</strong>: per un dispositivo collegato direttamente spesso è ignorato (o deve valere 1 / 255);
+  per un <strong>gateway</strong> TCP↔RTU indica l'indirizzo dello slave sul bus seriale dietro di lui.</li>
+</ul>
+<p>Prova nel <a href="#lab-inverter">laboratorio Inverter</a>: il registro dei frame mostra ogni byte in entrambe le direzioni.</p>
+<h2>2.5 Valori a 32 bit, float e stringhe</h2>
+<p>Un registro = 16 bit. Per valori più grandi servono più registri:</p>
+<ul>
+<li><code>uint32</code>/<code>acc32</code> (contatori di energia): 2 registri. Valore = <code>hi × 65536 + lo</code> (se word order big-endian).</li>
+<li><code>float32</code> IEEE-754: 2 registri. Molti contatori espongono float; SunSpec preferisce interi + scale factor.</li>
+<li>Stringhe: 2 caratteri ASCII per registro.</li>
+</ul>
+<p>Esempio: contatore = 1 234 567 Wh → 0x0012D687 → registri <code>[0x0012, 0xD687]</code> = <code>[18, 54919]</code>.
+Se il dispositivo usa il word swap leggerai <code>[54919, 18]</code> → valore assurdo 3 599 171 602 Wh.</p>
+<h2>2.6 Buone pratiche di polling (esperienza di campo)</h2>
+<ul>
+<li><strong>Leggi a blocchi</strong>: una richiesta da 50 registri è molto meglio di 50 richieste da 1.</li>
+<li>Ma <strong>non sconfinare</strong> in zone non mappate: molti inverter rispondono con eccezione 02 all'intera richiesta.</li>
+<li>Imposta <strong>timeout</strong> e <strong>retry</strong> ragionevoli; distingui "timeout" (problema di linea/indirizzo) da "eccezione" (il dispositivo ha risposto, ma la richiesta è sbagliata).</li>
+<li>Su RS-485 considera il <strong>tempo di ciclo</strong>: (n° dispositivi × tempo per dispositivo). Vedi il calcolo nel <a href="#lab-rtu">laboratorio Modbus RTU</a>.</li>
+<li>Su TCP molti dispositivi accettano <strong>poche connessioni contemporanee</strong> (a volte 1!). Se datalogger e PPC leggono lo stesso inverter, uno dei due può restare fuori.</li>
+<li><strong>Scritture</strong>: evita di scrivere continuamente parametri salvati in memoria non volatile (EEPROM/flash) — si usurano. I comandi "dinamici" (limitazione di potenza) vanno sui registri pensati per quello (es. SunSpec 123/704).</li>
+</ul>
+<h2>2.7 Sicurezza</h2>
+<p>Modbus <strong>non ha autenticazione né cifratura</strong>: chiunque raggiunga la porta 502 può leggere e
+<em>comandare</em> l'inverter. Regole minime: mai esporre la 502 su Internet, segmentare la rete di
+impianto, accesso remoto solo via VPN, firewall che permetta il 502 solo dal datalogger/PPC.
+Esiste <em>Modbus/TCP Security</em> (TLS, porta 802), ancora poco diffuso nei dispositivi FV.</p></section>
+    <section class="view prose" id="v-sunspec" hidden><h1>Lezione 3 — SunSpec: dare un significato ai registri Modbus</h1>
+<h2>3.1 Il problema</h2>
+<p>Senza standard, ogni produttore di inverter inventa la sua mappa: la potenza attiva può
+stare al registro 30775 come int32 in W, o al 40084 come int16 con scale factor, o in un
+float… Integrare 5 marche diverse in un portale o in un controllore d'impianto significa
+scrivere e testare 5 "driver".</p>
+<p><strong>SunSpec</strong> (SunSpec Alliance) definisce una mappa <strong>standard e auto-descrittiva</strong> sopra Modbus.</p>
+<h2>3.2 Come è organizzata la mappa</h2>
+<pre class="code"><code>Indirizzo  Contenuto
+40000      0x5375  &quot;Su&quot;   ┐ marker &quot;SunS&quot;: &quot;qui c'è una mappa SunSpec&quot;
+40001      0x6E53  &quot;nS&quot;   ┘
+40002      1               ID del modello (1 = Common)
+40003      66              L = lunghezza dei dati del modello, in registri
+40004..69  ...             dati del modello 1 (produttore, modello, seriale…)
+40070      103             ID del modello successivo (103 = inverter trifase)
+40071      50              L
+40072..121 ...             dati del modello 103
+40122      123             …e così via
+  ...
+           0xFFFF          ID di fine catena
+           0               L = 0
+</code></pre>
+<p>Un client non deve conoscere la mappa in anticipo: legge il marker, poi salta di modello in
+modello (<strong>discovery</strong>). Indirizzi base ammessi: <strong>40000</strong> (il più comune), 0, 50000.
+È esattamente ciò che fa il pulsante «Discovery» nel <a href="#lab-inverter">laboratorio</a>.</p>
+<blockquote>
+<p>Attenzione: la <em>posizione</em> di un modello non è fissa (dipende da quali modelli precedono),
+ma la posizione dei <em>punti dentro</em> un modello sì. Per questo si fa sempre la discovery.</p>
+</blockquote>
+<h2>3.3 Interi + scale factor</h2>
+<p>Quasi tutti i valori sono interi a 16 bit accompagnati da uno <strong>scale factor</strong> (tipo <code>sunssf</code>,
+intero con segno): <code>valore reale = valore × 10^SF</code>.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Punto</th>
+<th>Grezzo</th>
+<th>SF</th>
+<th>Reale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PhVphA</td>
+<td>2301</td>
+<td>-1</td>
+<td>230,1 V</td>
+</tr>
+<tr>
+<td>Hz</td>
+<td>4999</td>
+<td>-2</td>
+<td>49,99 Hz</td>
+</tr>
+<tr>
+<td>W</td>
+<td>1850</td>
+<td>1</td>
+<td>18 500 W</td>
+</tr>
+</tbody>
+</table></div>
+<p>Più punti possono condividere lo stesso SF (es. <code>A</code>, <code>AphA</code>, <code>AphB</code>, <code>AphC</code> usano tutti <code>A_SF</code>).
+Lo SF può essere fisso o cambiare a runtime: <strong>leggi valore e SF nella stessa richiesta</strong>,
+altrimenti rischi di combinare un valore nuovo con uno SF vecchio.</p>
+<p>Valori speciali di <strong>"non implementato"</strong>: <code>0xFFFF</code> (uint16/enum16), <code>0x8000</code> (int16/sunssf),
+<code>0</code> per gli accumulatori <code>acc32</code>. Un portale serio li mostra come "n/d", non come 65535 W.</p>
+<h2>3.4 I modelli principali</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Modelli</th>
+<th>Contenuto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Common</strong>: produttore, modello, versione, numero di serie, indirizzo</td>
+</tr>
+<tr>
+<td>101 / 102 / 103</td>
+<td><strong>Inverter</strong> monofase / bifase (split) / trifase, interi + SF</td>
+</tr>
+<tr>
+<td>111 / 112 / 113</td>
+<td>Come sopra ma con valori float</td>
+</tr>
+<tr>
+<td>120</td>
+<td><strong>Nameplate</strong>: dati di targa (potenza nominale <code>WRtg</code>, ecc.)</td>
+</tr>
+<tr>
+<td>121</td>
+<td><strong>Basic Settings</strong>: impostazioni (<code>WMax</code>, limiti di tensione…)</td>
+</tr>
+<tr>
+<td>122</td>
+<td>Stato esteso e misure aggiuntive</td>
+</tr>
+<tr>
+<td>123</td>
+<td><strong>Immediate Controls</strong>: connessione/disconnessione, limitazione di potenza, cos φ fisso, potenza reattiva</td>
+</tr>
+<tr>
+<td>124</td>
+<td>Accumulo (storage)</td>
+</tr>
+<tr>
+<td>126 e seguenti</td>
+<td>Funzioni di rete a curva: Volt-VAr, Freq-Watt, ecc.</td>
+</tr>
+<tr>
+<td>160</td>
+<td><strong>MPPT multipli</strong>: tensione/corrente/potenza per ingresso DC</td>
+</tr>
+<tr>
+<td>201–204 / 211–214</td>
+<td><strong>Contatori</strong> (mono/trifase, interi o float)</td>
+</tr>
+<tr>
+<td>302, 303, 307…</td>
+<td><strong>Sensori meteo</strong>: irraggiamento, temperatura modulo, stazione meteo</td>
+</tr>
+<tr>
+<td>701 e seguenti</td>
+<td>Nuova famiglia <strong>DER</strong> allineata a IEEE 1547-2018 (misure, capacità, controlli, curve)</td>
+</tr>
+<tr>
+<td>64000–65535</td>
+<td>Modelli <strong>proprietari</strong> del produttore</td>
+</tr>
+</tbody>
+</table></div>
+<p>Le definizioni ufficiali (in JSON) sono pubblicate dalla SunSpec Alliance su GitHub
+(<code>sunspec/models</code>); la libreria Python ufficiale è <strong>pySunSpec2</strong>.</p>
+<h2>3.5 Il modello 103 in dettaglio (quello che leggerai di più)</h2>
+<p>Offset rispetto all'inizio dei dati (cioè dopo ID e L):</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Off</th>
+<th>Punto</th>
+<th>Tipo</th>
+<th>Significato</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0–3</td>
+<td>A, AphA, AphB, AphC</td>
+<td>uint16</td>
+<td>correnti AC (con <code>A_SF</code> all'offset 4)</td>
+</tr>
+<tr>
+<td>5–10</td>
+<td>PPVphAB… PhVphC</td>
+<td>uint16</td>
+<td>tensioni concatenate e di fase (<code>V_SF</code> a 11)</td>
+</tr>
+<tr>
+<td>12</td>
+<td>W</td>
+<td>int16</td>
+<td><strong>potenza attiva</strong> (<code>W_SF</code> a 13)</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Hz</td>
+<td>uint16</td>
+<td>frequenza (<code>Hz_SF</code> a 15)</td>
+</tr>
+<tr>
+<td>16, 18</td>
+<td>VA, VAr</td>
+<td>int16</td>
+<td>potenza apparente e reattiva</td>
+</tr>
+<tr>
+<td>20</td>
+<td>PF</td>
+<td>int16</td>
+<td>fattore di potenza (in %)</td>
+</tr>
+<tr>
+<td>22–23</td>
+<td>WH</td>
+<td>acc32</td>
+<td><strong>contatore di energia</strong> (<code>WH_SF</code> a 24)</td>
+</tr>
+<tr>
+<td>25, 27, 29</td>
+<td>DCA, DCV, DCW</td>
+<td></td>
+<td>grandezze lato DC</td>
+</tr>
+<tr>
+<td>31–34</td>
+<td>TmpCab, TmpSnk, TmpTrns, TmpOt</td>
+<td>int16</td>
+<td>temperature (<code>Tmp_SF</code> a 35)</td>
+</tr>
+<tr>
+<td>36</td>
+<td>St</td>
+<td>enum16</td>
+<td><strong>stato</strong>: 1 Off, 2 Sleeping, 3 Starting, 4 MPPT, 5 Throttled, 6 Shutting down, 7 Fault, 8 Standby</td>
+</tr>
+<tr>
+<td>37</td>
+<td>StVnd</td>
+<td>enum16</td>
+<td>stato specifico del produttore</td>
+</tr>
+<tr>
+<td>38–39</td>
+<td>Evt1</td>
+<td>bitfield32</td>
+<td>allarmi standard (sovratensione, isolamento, sovratemperatura…)</td>
+</tr>
+<tr>
+<td>40–49</td>
+<td>Evt2, EvtVnd1–4</td>
+<td>bitfield32</td>
+<td>altri allarmi / allarmi del produttore</td>
+</tr>
+</tbody>
+</table></div>
+<h2>3.6 Comandare un inverter: il modello 123</h2>
+<p>Per limitare la potenza attiva (la funzione più usata dai controllori d'impianto):</p>
+<ol>
+<li>scrivi <code>WMaxLimPct</code> = percentuale di <code>WMax</code> (con <code>WMaxLimPct_SF</code>);</li>
+<li>opzionale: <code>WMaxLimPct_RmpTms</code> (rampa), <code>WMaxLimPct_RvrtTms</code> (<strong>timeout di ritorno</strong>);</li>
+<li>scrivi <code>WMaxLim_Ena = 1</code> per attivare.</li>
+</ol>
+<p>Il <strong>timeout di ritorno</strong> è una sicurezza fondamentale: se il controllore smette di rinnovare
+il comando (si guasta, cade la rete), l'inverter torna al comportamento di default invece di
+restare bloccato su un comando vecchio. Provalo nel <a href="#lab-inverter">laboratorio</a>: limita al 30% con ritorno dopo 10 s e osserva cosa succede.</p>
+<h2>3.7 SunSpec nella realtà</h2>
+<ul>
+<li>Molti inverter espongono <strong>sia</strong> una mappa SunSpec <strong>sia</strong> una mappa proprietaria più ricca:
+  verifica nella documentazione quale è abilitata (a volte va attivata da menu/app).</li>
+<li>Alcuni implementano SunSpec "a modo loro" (modelli parziali, SF strani, unit id particolari):
+  la certificazione SunSpec riduce, ma non elimina, le sorprese.</li>
+<li>I nuovi prodotti tendono verso i modelli <strong>7xx</strong> (IEEE 1547-2018); in campo trovi ancora
+  soprattutto 1/103/120/121/123/160.</li>
+</ul></section>
+    <section class="view prose" id="v-monitoraggio" hidden><h1>Lezione 4 — Protocolli dei portali di monitoraggio</h1>
+<h2>4.1 La catena del dato</h2>
+<pre class="code"><code>Dispositivo  ──(1) campo──►  Datalogger  ──(2) WAN──►  Cloud/portale  ──(3) API──►  Altri software
+inverter,     Modbus RTU/TCP,  buffer locale,   HTTPS, MQTT,    database a serie   REST/JSON,
+contatori,    SunSpec,         normalizzazione  SFTP/FTP (CSV), temporali, KPI,     webhook,
+meteo         proprietari                       VPN             allarmi            export CSV
+</code></pre>
+<p>Ogni anello introduce latenza, possibili perdite e trasformazioni del dato: quando un numero sul
+portale "non torna", si risale la catena anello per anello.</p>
+<h2>4.2 (1) Il lato campo</h2>
+<ul>
+<li><strong>Inverter</strong>: Modbus RTU su RS-485 (impianti più vecchi e residenziali), Modbus TCP (impianti
+  recenti), SunSpec o mappe proprietarie. Alcuni produttori usano protocolli proprietari sul bus
+  (il datalogger del produttore li "parla" nativamente, quelli di terze parti no).</li>
+<li><strong>Contatori / analizzatori di rete</strong>: quasi sempre Modbus. I <strong>contatori fiscali</strong> di produzione
+  e scambio usano invece protocolli metrologici (IEC 62056 / DLMS-COSEM, porta ottica) e sono letti
+  dal distributore; il monitoraggio di solito legge un <em>analizzatore</em> parallelo o le uscite impulsi.</li>
+<li><strong>Sensori meteo</strong>: piranometri e celle di riferimento (irraggiamento), sonde di temperatura
+  modulo e ambiente, anemometri — Modbus RTU o uscite analogiche (4–20 mA, 0–10 V) acquisite da
+  un modulo I/O.</li>
+<li><strong>String box / string monitoring</strong>: correnti di stringa, utili per trovare stringhe guaste.</li>
+</ul>
+<h2>4.3 (2) Dal datalogger al cloud</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Metodo</th>
+<th>Come funziona</th>
+<th>Pro</th>
+<th>Contro</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>HTTPS push (POST JSON)</strong></td>
+<td>il logger invia ogni N minuti un pacchetto di dati</td>
+<td>semplice, attraversa i firewall</td>
+<td>overhead per messaggio</td>
+</tr>
+<tr>
+<td><strong>MQTT</strong> (spesso su TLS, porta 8883)</td>
+<td>il logger pubblica su un <em>topic</em> presso un <em>broker</em></td>
+<td>leggero, connessione persistente, QoS, ideale per dati frequenti</td>
+<td>serve un broker, schema del payload da definire</td>
+</tr>
+<tr>
+<td><strong>FTP/SFTP con file CSV</strong></td>
+<td>il logger carica un file ogni 5–15 min</td>
+<td>universale, facile importare da logger di marche diverse</td>
+<td>latenza, gestione file duplicati/parziali; FTP in chiaro è da evitare</td>
+</tr>
+<tr>
+<td><strong>Pull via VPN</strong></td>
+<td>il portale interroga direttamente il logger o i dispositivi</td>
+<td>accesso completo in tempo reale</td>
+<td>infrastruttura VPN, porte, sicurezza</td>
+</tr>
+</tbody>
+</table></div>
+<p>Principi di un buon datalogger:</p>
+<ul>
+<li><strong>Store &amp; forward</strong>: memorizza in locale e reinvia quando la connessione torna → nessun buco nei dati.</li>
+<li><strong>Timestamp alla sorgente in UTC</strong>, non all'arrivo sul server. Attenzione all'ora legale!</li>
+<li><strong>Distinguere "0" da "dato mancante"</strong>: inverter spento di notte ≠ inverter che non comunica.</li>
+<li><strong>Aggregazione</strong>: medie/min/max su 1, 5 o 15 minuti; per l'energia meglio inviare il <strong>valore del contatore</strong> (cumulativo) e calcolare le differenze lato server, così una perdita di dati non altera il totale.</li>
+</ul>
+<h3>MQTT in 5 righe</h3>
+<ul>
+<li><strong>Broker</strong>: il server centrale. <strong>Client</strong>: chi pubblica e chi si iscrive.</li>
+<li><strong>Topic</strong> gerarchici: <code>pv/&lt;impianto&gt;/&lt;dispositivo&gt;/telemetry</code>; wildcard <code>+</code> e <code>#</code> per iscriversi.</li>
+<li><strong>QoS</strong> 0 (al più una volta), 1 (almeno una volta), 2 (esattamente una volta).</li>
+<li><strong>Retained message</strong>: l'ultimo valore resta disponibile per chi si iscrive dopo.</li>
+<li><strong>Last Will</strong>: messaggio pubblicato dal broker se il client si disconnette male → stato "offline".
+  Il formato del payload (JSON, Sparkplug B, ecc.) non è definito da MQTT: lo decidi tu.</li>
+</ul>
+<h2>4.4 (3) Le API dei portali (northbound)</h2>
+<p>I portali dei produttori (e quelli indipendenti) espongono API, quasi sempre <strong>REST su HTTPS
+con JSON</strong>, per integrare i dati in altri software (SCADA di flotta, gestionali, fatturazione).
+Elementi ricorrenti:</p>
+<ul>
+<li><strong>Autenticazione</strong>: API key, token OAuth2, login con sessione/cookie.</li>
+<li><strong>Rate limit</strong>: numero massimo di chiamate al giorno/minuto → occorre pianificare le letture,
+  usare endpoint "bulk" e salvare in locale.</li>
+<li><strong>Granularità</strong>: dati a 5/15 minuti, giornalieri, mensili; i dati "in tempo reale" spesso sono limitati.</li>
+<li><strong>Fusi orari</strong>: verificare sempre se i timestamp sono locali o UTC.</li>
+</ul>
+<p>Alcuni inverter offrono anche un'<strong>API HTTP locale</strong> (JSON sulla rete dell'impianto): comoda per
+integrazioni domotiche senza passare dal cloud.</p>
+<blockquote>
+<p>Le API cambiano nel tempo: fai sempre riferimento alla documentazione ufficiale e corrente
+del produttore (di solito richiede registrazione).</p>
+</blockquote>
+<h2>4.5 Cosa calcola un portale con questi dati</h2>
+<ul>
+<li><strong>Energia</strong> prodotta (dai contatori cumulativi), <strong>potenza</strong> istantanea.</li>
+<li><strong>Performance Ratio (PR)</strong> = energia reale / energia teorica attesa con l'irraggiamento misurato
+  → serve un sensore di irraggiamento affidabile e sincronizzato con i dati elettrici.</li>
+<li><strong>Disponibilità</strong> tecnica (tempo in cui l'impianto poteva produrre ed era funzionante).</li>
+<li><strong>Allarmi</strong>: da bit di evento (es. SunSpec <code>Evt1</code>), da stati (<code>St = 7 Fault</code>), da confronti
+  (un inverter produce il 20% in meno dei vicini), da <strong>assenza di comunicazione</strong>.</li>
+</ul>
+<h2>4.6 Sicurezza</h2>
+<ul>
+<li>Datalogger che si connette <strong>in uscita</strong> verso il cloud (TLS) &gt; porte aperte in ingresso.</li>
+<li>Credenziali di default cambiate, firmware aggiornati, VPN per l'accesso remoto.</li>
+<li>Rete di impianto separata (VLAN/firewall) dalla rete ospiti / uffici / videosorveglianza.</li>
+</ul></section>
+    <section class="view prose" id="v-controllo" hidden><h1>Lezione 5 — Controllore centrale d'impianto (PPC / CCI) e comunicazione con la rete</h1>
+<h2>5.1 Perché serve un controllore d'impianto</h2>
+<p>Ogni inverter regola potenza attiva e reattiva <strong>ai propri morsetti</strong>. Il gestore di rete però
+vuole che certe grandezze siano rispettate al <strong>punto di connessione</strong> (POI, <em>point of
+interconnection</em>), dove contano tutti gli inverter insieme, i cavi, i trasformatori, i servizi
+ausiliari. Il <strong>PPC</strong> (<em>Power Plant Controller</em>) — in Italia, per gli impianti in MT, il
+<strong>CCI (Controllore Centrale di Impianto)</strong> previsto dalla CEI 0-16 — è il "cervello" che:</p>
+<ol>
+<li><strong>misura</strong> al POI (analizzatore di rete / multimetro di precisione);</li>
+<li><strong>riceve</strong> setpoint e comandi dal gestore di rete o dallo SCADA;</li>
+<li><strong>calcola</strong> i comandi da dare a ciascun inverter (regolazione ad anello chiuso);</li>
+<li><strong>invia</strong> i comandi agli inverter e verifica che vengano eseguiti;</li>
+<li><strong>riporta</strong> misure e stati al gestore (osservabilità).</li>
+</ol>
+<p>Funzioni tipiche: limitazione della potenza attiva, rampe di potenza, setpoint di potenza
+reattiva o cos φ, regolazione Q(V) o di tensione, gestione di accumuli.</p>
+<h2>5.2 Architettura e protocolli</h2>
+<pre class="code"><code>           Gestore di rete (DSO / TSO)          SCADA / O&amp;M
+                   ▲ IEC 61850 (MMS)                ▲ IEC 104, OPC UA, Modbus TCP
+                   │ IEC 60870-5-104                │
+            ┌──────┴────────────────────────────────┴──────┐
+            │          PPC / CCI  (PLC o PC industriale)   │
+            └──┬─────────────────┬───────────────────────┬─┘
+     Modbus TCP│ / IEC 61850     │ Modbus TCP / SunSpec  │ I/O cablati
+               ▼                 ▼  o protocollo propr.  ▼
+        Analizzatore al POI   Inverter 1..N        Interruttori, protezioni
+        (P, Q, V, f, cos φ)   (eventuali storage)
+</code></pre>
+<p><strong>Verso il basso</strong> (PPC → campo): soprattutto <strong>Modbus TCP</strong>, con mappe SunSpec (modelli 123 o
+704) o proprietarie; alcuni produttori offrono protocolli dedicati più veloci o comandi
+<em>broadcast</em> per raggiungere tutti gli inverter con un solo messaggio. Nelle centrali più grandi
+anche IEC 61850.</p>
+<p><strong>Verso l'alto</strong> (PPC → rete/SCADA):</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Protocollo</th>
+<th>Dove si usa</th>
+<th>Caratteristiche</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>IEC 61850</strong> (MMS su TCP porta 102, GOOSE su Ethernet)</td>
+<td>sottostazioni, interfaccia CCI ↔ distributore in Italia (CEI 0-16 All. T)</td>
+<td>modello dati a oggetti auto-descrittivo, report a eventi, file di configurazione SCL</td>
+</tr>
+<tr>
+<td><strong>IEC 60870-5-104</strong> (TCP porta 2404)</td>
+<td>telecontrollo verso TSO, distributori, SCADA in Europa</td>
+<td>punti indirizzati (IOA), invio spontaneo, timestamp, comandi con conferma</td>
+</tr>
+<tr>
+<td><strong>DNP3</strong></td>
+<td>Nord America</td>
+<td>concetti simili a IEC 104</td>
+</tr>
+<tr>
+<td><strong>OPC UA</strong></td>
+<td>integrazione tra sistemi SCADA/IT</td>
+<td>modello a oggetti, sicurezza integrata</td>
+</tr>
+<tr>
+<td><strong>Modbus TCP</strong></td>
+<td>SCADA semplici, integrazioni locali</td>
+<td>facile ma senza eventi, timestamp né sicurezza</td>
+</tr>
+</tbody>
+</table></div>
+<h2>5.3 IEC 60870-5-104 in pratica</h2>
+<p>È il "Modbus dei telecontrolli", ma con concetti molto diversi. Nel
+<a href="#lab-iec104">laboratorio IEC 104</a> trovi una sessione completa decodificata.</p>
+<ul>
+<li><strong>Indirizzamento</strong>: <em>Common Address</em> (identifica la stazione/impianto) + <em>IOA</em> (indirizzo
+  dell'oggetto informativo, es. 1001 = potenza attiva al POI). La lista dei punti (la "signal list"
+  o "lista segnali") è concordata tra impianto e gestore: è il vero documento di progetto.</li>
+<li><strong>Tipi (Type ID)</strong>: segnali singoli/doppi (stati interruttori), misure (normalizzate, scalate,
+  float), con o senza timestamp, comandi, setpoint, interrogazione generale, sincronizzazione orologio.</li>
+<li><strong>Causa di trasmissione</strong>: spontanea, periodica, risposta a interrogazione, attivazione,
+  conferma… dice <em>perché</em> arriva quel messaggio.</li>
+<li><strong>Qualità</strong>: ogni dato porta flag come <em>non valido</em>, <em>non aggiornato</em>, <em>sostituito</em>.</li>
+<li><strong>Sessione</strong>: <code>STARTDT</code> apre il flusso, i messaggi I sono numerati e confermati (parametri
+  k = 12 messaggi non confermati, w = 8), <code>TESTFR</code> mantiene viva la connessione; timeout t1/t2/t3.</li>
+<li><strong>Comandi</strong>: possono essere <em>direct execute</em> o <em>select-before-operate</em> (prima seleziono, poi
+  eseguo: protegge da comandi accidentali).</li>
+</ul>
+<h2>5.4 IEC 61850 in pratica</h2>
+<p>Nato per l'automazione delle sottostazioni, è diventato il riferimento anche per gli impianti di
+produzione e per l'interfaccia con il distributore.</p>
+<p><strong>Modello dati gerarchico</strong> (auto-descrittivo: un client può "sfogliare" il server):</p>
+<pre class="code"><code>Server (IED)
+└── Logical Device        es. &quot;CCI1&quot;
+    └── Logical Node      es. MMXU1 (misure), XCBR1 (interruttore), CSWI1 (comando)...
+        └── Data Object   es. TotW (potenza attiva totale), PhV (tensioni di fase)
+            └── Data Attribute   es. mag.f (valore float), q (qualità), t (timestamp)
+
+Riferimento completo:  CCI1/MMXU1.TotW.mag.f   [FC = MX, cioè grandezza misurata]
+</code></pre>
+<ul>
+<li>I <strong>Logical Node</strong> sono standardizzati: le prime lettere indicano la famiglia (M = misure,
+  X = apparecchiature di manovra, C = controllo, P = protezioni, G = generici, D = risorse
+  distribuite secondo <strong>IEC 61850-7-420</strong>, Z = altre apparecchiature, ecc.).</li>
+<li><strong>Functional Constraint (FC)</strong>: MX misure, ST stati, CO comandi, SP/SE setpoint e parametri, CF configurazione.</li>
+<li><strong>Servizi</strong>: lettura/scrittura, <strong>report</strong> (bufferizzati o no: il server invia i dati quando
+  cambiano o a intervalli), <strong>controlli</strong> (direct o select-before-operate, anche con <em>enhanced
+  security</em>), log, file transfer.</li>
+<li><strong>Mappatura su protocolli</strong>: client/server su <strong>MMS</strong> (TCP 102); <strong>GOOSE</strong> (multicast Ethernet
+  di livello 2, millisecondi, per interblocchi e protezioni); <strong>Sampled Values</strong> (campioni di
+  corrente/tensione).</li>
+<li><strong>SCL</strong> (Substation Configuration Language, XML): ICD = capacità di un dispositivo,
+  CID = configurazione di uno specifico dispositivo, SCD = intera sottostazione. Lo scambio di
+  file SCL è parte integrante della messa in servizio.</li>
+<li><strong>Interoperabilità</strong>: esistono test di conformità (UCA International Users Group). Server non
+  testati possono non dialogare correttamente con i client dei gestori.</li>
+<li><strong>Sicurezza</strong>: famiglia <strong>IEC 62351</strong> (es. 62351-3: TLS per i profili su TCP).</li>
+</ul>
+<h2>5.5 Il contesto italiano: il CCI per gli impianti in media tensione</h2>
+<blockquote>
+<p>⚠️ Il quadro normativo è cambiato più volte negli ultimi anni. Quanto segue è un orientamento:
+verifica sempre la <strong>versione vigente</strong> della CEI 0-16 (e delle sue varianti) e le delibere ARERA
+aggiornate prima di progettare o acquistare.</p>
+</blockquote>
+<ul>
+<li><strong>Norma CEI 0-16</strong> (regola tecnica di connessione degli utenti attivi e passivi alle reti AT e MT
+  dei distributori):</li>
+<li><strong>Allegato O</strong> — requisiti funzionali del <strong>CCI</strong>;</li>
+<li><strong>Allegato T</strong> — interfaccia di comunicazione del CCI verso il distributore basata su <strong>IEC 61850</strong>
+    (introdotto con la variante V2 del 2021), con requisiti di cybersecurity (es. IEC 62351-3 per
+    la comunicazione sicura, IEC 62443-4-1 per il processo di sviluppo sicuro).</li>
+<li>Successive varianti (fino al 2025) hanno aggiornato gli allegati O, T e U.</li>
+<li><strong>ARERA 540/2021/R/eel</strong>: ha reso obbligatorie le funzioni di <strong>osservabilità</strong> del CCI per gli
+  impianti di produzione connessi in MT; <strong>730/2022/R/eel</strong> ne ha modificato le tempistiche;
+  <strong>385/2025/R/eel</strong> ha ulteriormente aggiornato obblighi e funzionalità (diverse fonti riportano
+  l'obbligo per impianti a partire da <strong>100 kW</strong> connessi in MT — verifica soglie e scadenze sul testo ufficiale).</li>
+<li><strong>Funzioni del CCI</strong> (in sintesi):</li>
+<li><strong>osservabilità</strong>: invio in tempo reale al distributore (che le rende disponibili anche a Terna)
+    di misure e stati dell'impianto (potenze, tensioni, stato degli interruttori…);</li>
+<li><strong>regolazione/controllo</strong> (funzioni attivabili su richiesta del distributore): limitazione
+    della potenza attiva, regolazione della potenza reattiva/tensione;</li>
+<li>il CCI <strong>non</strong> effettua regolazione di frequenza: quella resta affidata alle funzioni locali
+    degli inverter.</li>
+<li><strong>Impianti connessi alla rete di trasmissione (AT/AAT)</strong>: valgono i requisiti del <strong>Codice di Rete
+  Terna</strong> e dei suoi allegati, con regolazione e telecontrollo concordati con Terna.</li>
+</ul>
+<p>Lato campo, il CCI comunica tipicamente con gli inverter in <strong>Modbus TCP</strong> (SunSpec o mappe del
+produttore) e con l'analizzatore al POI: tutto ciò che hai visto nelle lezioni 2–3 resta valido.</p>
+<h2>5.6 Le domande che contano davvero in un progetto di controllo</h2>
+<ol>
+<li><strong>Tempi</strong>: quanto deve rispondere l'impianto a un nuovo setpoint? Il ciclo misura→calcolo→
+   comando→effetto deve stare dentro quel tempo, inclusi polling Modbus, rampe degli inverter
+   e ritardi di rete. Prova il <a href="#lab-ppc">controllore del laboratorio</a> con guadagni diversi.</li>
+<li><strong>Perdita di comunicazione</strong>: cosa fa l'inverter se il PPC tace? E il PPC se il gestore tace?
+   Mantiene l'ultimo setpoint, va a un valore di sicurezza, torna al default? (watchdog, timeout
+   di ritorno, valori di <em>fallback</em>).</li>
+<li><strong>Sincronizzazione oraria</strong>: NTP o PTP; i timestamp devono essere coerenti tra campo, PPC e gestore.</li>
+<li><strong>Qualità del dato</strong>: una misura non valida va marcata come tale, non sostituita con 0.</li>
+<li><strong>Sicurezza</strong>: segmentazione di rete, VPN/router certificati verso il gestore, nessun servizio
+   esposto, gestione di certificati e password.</li>
+<li><strong>Documentazione</strong>: lista segnali (IOA o riferimenti 61850), file SCL, mappe Modbus, verbali di
+   prova end-to-end con il gestore.</li>
+</ol></section>
+    <section class="view prose" id="v-glossario" hidden><h1>Glossario e risorse</h1>
+<h2>Glossario</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Termine</th>
+<th>Significato</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ADU / PDU</strong></td>
+<td>Application/Protocol Data Unit: il frame completo / la parte "funzione + dati"</td>
+</tr>
+<tr>
+<td><strong>APCI / ASDU</strong></td>
+<td>In IEC 104: intestazione di controllo / unità dati applicativa</td>
+</tr>
+<tr>
+<td><strong>CCI</strong></td>
+<td>Controllore Centrale di Impianto (CEI 0-16, Allegato O)</td>
+</tr>
+<tr>
+<td><strong>CID / ICD / SCD</strong></td>
+<td>File SCL IEC 61850: configurato / capacità / sottostazione</td>
+</tr>
+<tr>
+<td><strong>Common Address</strong></td>
+<td>IEC 104: indirizzo della stazione</td>
+</tr>
+<tr>
+<td><strong>Deadband</strong></td>
+<td>Variazione minima che fa scattare l'invio spontaneo di una misura</td>
+</tr>
+<tr>
+<td><strong>DSO / TSO</strong></td>
+<td>Distribution / Transmission System Operator (distributore / Terna)</td>
+</tr>
+<tr>
+<td><strong>GOOSE</strong></td>
+<td>Messaggi IEC 61850 multicast veloci di livello 2</td>
+</tr>
+<tr>
+<td><strong>IOA</strong></td>
+<td>Information Object Address (IEC 104)</td>
+</tr>
+<tr>
+<td><strong>Logical Node</strong></td>
+<td>Funzione elementare nel modello IEC 61850 (es. MMXU = misure)</td>
+</tr>
+<tr>
+<td><strong>MBAP</strong></td>
+<td>Intestazione di 7 byte di Modbus TCP</td>
+</tr>
+<tr>
+<td><strong>MMS</strong></td>
+<td>Manufacturing Message Specification: protocollo client/server di IEC 61850</td>
+</tr>
+<tr>
+<td><strong>MPPT</strong></td>
+<td>Inseguitore del punto di massima potenza (ingresso DC dell'inverter)</td>
+</tr>
+<tr>
+<td><strong>POI</strong></td>
+<td>Point of Interconnection: punto di connessione alla rete</td>
+</tr>
+<tr>
+<td><strong>PPC</strong></td>
+<td>Power Plant Controller</td>
+</tr>
+<tr>
+<td><strong>PR</strong></td>
+<td>Performance Ratio</td>
+</tr>
+<tr>
+<td><strong>Scale factor (SF)</strong></td>
+<td>Esponente di 10 che trasforma l'intero grezzo nel valore reale (SunSpec)</td>
+</tr>
+<tr>
+<td><strong>SPI / SPG</strong></td>
+<td>Sistema di Protezione di Interfaccia / Generale</td>
+</tr>
+<tr>
+<td><strong>Unit ID</strong></td>
+<td>Indirizzo dello slave in Modbus TCP (fondamentale con i gateway)</td>
+</tr>
+<tr>
+<td><strong>Watchdog / revert timeout</strong></td>
+<td>Ritorno automatico a uno stato sicuro se i comandi non vengono rinnovati</td>
+</tr>
+</tbody>
+</table></div>
+<h2>Risorse per approfondire</h2>
+<p><strong>Standard e specifiche</strong>
+- Modbus Organization — <em>Modbus Application Protocol Specification</em> e <em>Modbus over Serial Line</em> (gratuite): modbus.org
+- SunSpec Alliance — specifiche SunSpec Modbus e modelli (repository GitHub <code>sunspec/models</code>), libreria <code>pySunSpec2</code>: sunspec.org
+- IEC 61850 (serie), IEC 61850-7-420 (risorse energetiche distribuite), IEC 60870-5-101/104, IEC 62351 (sicurezza): a pagamento su webstore.iec.ch; molte guide introduttive gratuite sono pubblicate dai produttori di IED e gateway
+- MQTT 3.1.1 / 5.0: mqtt.org e OASIS</p>
+<p><strong>Italia</strong>
+- Norma <strong>CEI 0-16</strong> e varianti (in particolare Allegati O, T, U) — CEI (ceinorme.it); il CEI ha pubblicato anche un <strong>foglio interpretativo</strong> (IS1:2023-07) con risposte alle domande sugli Allegati O e T
+- Delibere <strong>ARERA</strong> 540/2021/R/eel, 730/2022/R/eel, 385/2025/R/eel — arera.it
+- <strong>Codice di Rete Terna</strong> e allegati — terna.it</p>
+<p><strong>Strumenti</strong>
+- Wireshark (dissector Modbus, IEC 104, MMS, GOOSE)
+- Client Modbus grafici (es. QModMaster, Modbus Poll), simulatori (es. diagslave, ModRSsim2)
+- Librerie: pymodbus, libmodbus, lib60870 / libiec61850 (MZ Automation), Eclipse Paho (MQTT)</p></section>
+
+    <!-- ===================== LAB: shared head ===================== -->
+    <div id="labhead" class="labhead" hidden>
+      <h1>Laboratorio</h1>
+      <p>Tutto è simulato nel browser: i frame che vedi sono gli stessi byte che viaggerebbero su un cavo Ethernet o RS-485. La giornata solare dura 10 minuti, così vedi la produzione salire e scendere.</p>
+      <nav class="tabs" aria-label="Esperimenti">
+        <a class="tab" href="#lab-inverter">Inverter SunSpec</a>
+        <a class="tab" href="#lab-ppc">Controllore d'impianto</a>
+        <a class="tab" href="#lab-rtu">Modbus RTU</a>
+        <a class="tab" href="#lab-iec104">IEC 60870-5-104</a>
+      </nav>
+    </div>
+
+    <!-- ===================== LAB: inverter ===================== -->
+    <section class="view" id="v-lab-inverter" hidden>
+      <div class="grid2">
+        <div class="stack">
+          <div class="panel">
+            <h2>Inverter simulato</h2>
+            <p class="sub">Trifase, Modbus TCP, mappa SunSpec a partire da 40000. Il tuo client legge i modelli 103 e 123 ogni 2 secondi.</p>
+            <div class="big">
+              <div class="kv"><span class="k">Potenza attiva</span><span class="v" id="inv-w">–</span></div>
+              <div class="kv"><span class="k">Energia (contatore)</span><span class="v" id="inv-wh">–</span></div>
+              <div class="kv"><span class="k">Stato (St)</span><span><span class="pill" id="inv-st">–</span></span></div>
+            </div>
+            <svg class="chart" id="inv-chart" viewBox="0 0 600 150" role="img" aria-label="Andamento della potenza attiva letta"></svg>
+            <div class="legend"><span class="lg-main">W letta via Modbus</span><span class="lg-sp">limite attivo</span></div>
+          </div>
+
+          <div class="panel">
+            <h2>Comandi del client</h2>
+            <p class="sub">Ogni pulsante genera richieste Modbus reali verso l'inverter simulato.</p>
+            <div class="row">
+              <button class="btn" id="b-disc">Discovery</button>
+              <button class="btn" id="b-read">Leggi ora</button>
+              <button class="btn" id="b-auto" aria-pressed="true">Lettura automatica</button>
+              <label class="fld">Taglia inverter
+                <select id="inv-size"><option value="20000">20 kW</option><option value="60000">60 kW</option></select>
+              </label>
+            </div>
+            <h3 style="font-size:1rem;margin:18px 0 8px">Limitazione di potenza (modello 123)</h3>
+            <div class="row">
+              <label class="fld">Limite: <span class="mono" id="lim-val">30%</span>
+                <input type="range" id="lim-pct" min="0" max="100" step="5" value="30">
+              </label>
+              <label class="fld">Ritorno dopo (s, 0 = mai)
+                <input type="number" id="lim-rvrt" min="0" max="600" value="15" style="width:7rem">
+              </label>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn primary" id="b-lim">Invia limite</button>
+              <button class="btn" id="b-rel">Rimuovi limite</button>
+            </div>
+            <div class="result" id="lim-res" style="margin-top:12px">Nessun limite inviato. Prova al 30% con ritorno dopo 15 s.</div>
+
+            <h3 style="font-size:1rem;margin:18px 0 8px">Prova gli errori</h3>
+            <div class="row">
+              <button class="btn danger" id="e-addr">Leggi 30000</button>
+              <button class="btn danger" id="e-ro">Scrivi sul registro W</button>
+              <button class="btn danger" id="e-unit">Unit ID 7</button>
+              <button class="btn danger" id="e-val">Limite 150%</button>
+            </div>
+            <div class="result" id="err-res" style="margin-top:12px">Ogni pulsante invia una richiesta sbagliata. Guarda la risposta di eccezione nel registro dei frame.</div>
+          </div>
+
+          <div class="panel">
+            <h2>Dati decodificati</h2>
+            <p class="sub" id="disc-out">Discovery non ancora eseguita.</p>
+            <div class="tbl"><table id="t103"><thead><tr><th>Punto</th><th>Valore</th><th>Grezzo</th><th>Significato</th></tr></thead><tbody></tbody></table></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Registro dei frame</h2>
+          <p class="sub">Ultime transazioni, la più recente in alto. Ogni byte è colorato per campo.</p>
+          <div class="fieldlegend">
+            <span class="c-mbap">Intestazione MBAP</span><span class="c-fc">Function code</span><span class="c-addr">Indirizzo / quantità</span><span class="c-data">Dati</span><span class="c-exc">Eccezione</span>
+          </div>
+          <div class="row" style="margin-bottom:10px">
+            <label class="fld" style="grid-auto-flow:column;align-items:center;gap:8px"><input type="checkbox" id="tr-auto"> Mostra anche le letture automatiche</label>
+          </div>
+          <div class="trace" id="trace"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== LAB: PPC ===================== -->
+    <section class="view" id="v-lab-ppc" hidden>
+      <div class="stack">
+        <div class="panel">
+          <h2>Controllore d'impianto (PPC)</h2>
+          <p class="sub">Due inverter da 20 kW. Ogni mezzo secondo il PPC legge la potenza di entrambi, calcola la nuova percentuale con un regolatore integrale e la scrive nel modello 123, con un timeout di ritorno di 2 s.</p>
+          <div class="row">
+            <label class="fld">Setpoint al punto di connessione: <span class="mono" id="sp-val">25,0 kW</span>
+              <input type="range" id="ppc-sp" min="0" max="40000" step="500" value="25000">
+            </label>
+            <label class="fld">Guadagno integrale Ki
+              <select id="ppc-ki"><option value="0.1">0,1 (lento)</option><option value="0.5" selected>0,5</option><option value="1.5">1,5 (aggressivo)</option></select>
+            </label>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn primary" id="ppc-start">Avvia PPC</button>
+            <button class="btn" id="ppc-stop">Ferma e rilascia</button>
+            <button class="btn danger" id="ppc-crash">Simula guasto del PPC</button>
+          </div>
+          <div class="result" id="ppc-res" style="margin-top:12px">PPC fermo: gli inverter producono liberamente.</div>
+        </div>
+        <div class="panel">
+          <div class="big">
+            <div class="kv"><span class="k">Potenza al POI</span><span class="v" id="poi-w">–</span></div>
+            <div class="kv"><span class="k">Setpoint</span><span class="v" id="poi-sp">–</span></div>
+            <div class="kv"><span class="k">Limite inviato</span><span class="v" id="poi-pct">–</span></div>
+          </div>
+          <svg class="chart" id="ppc-chart" viewBox="0 0 600 220" role="img" aria-label="Potenza al punto di connessione e setpoint negli ultimi 60 secondi"></svg>
+          <div class="legend"><span class="lg-main">Potenza al POI</span><span class="lg-sp">Setpoint</span><span class="lg-av">Potenza disponibile dal sole</span></div>
+        </div>
+        <div class="invcards" id="ppc-invs"></div>
+        <div class="panel">
+          <h2>Cicli di controllo</h2>
+          <div class="log" id="ppc-log">In attesa di avvio.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== LAB: RTU ===================== -->
+    <section class="view" id="v-lab-rtu" hidden>
+      <div class="grid2">
+        <div class="stack">
+          <div class="panel">
+            <h2>Calcola il CRC di un frame RTU</h2>
+            <p class="sub">Scrivi indirizzo dello slave e PDU in esadecimale, senza CRC.</p>
+            <input type="text" id="rtu-in" value="01 03 00 00 00 0A" aria-label="Frame RTU senza CRC" autocomplete="off" spellcheck="false">
+            <div style="margin-top:12px" class="bytes" id="rtu-out"></div>
+            <p class="decoded" id="rtu-txt"></p>
+          </div>
+          <div class="panel">
+            <h2>Gateway Modbus TCP → RTU</h2>
+            <p class="sub">Il gateway toglie l'intestazione MBAP, usa l'Unit ID come indirizzo dello slave e aggiunge il CRC.</p>
+            <input type="text" id="gw-in" value="00 07 00 00 00 06 01 03 9C 88 00 32" aria-label="Frame Modbus TCP" autocomplete="off" spellcheck="false">
+            <p class="muted" style="margin:12px 0 4px;font-size:.85rem">Modbus TCP</p>
+            <div class="bytes" id="gw-tcp"></div>
+            <p class="muted" style="margin:12px 0 4px;font-size:.85rem">Modbus RTU sul bus RS-485</p>
+            <div class="bytes" id="gw-rtu"></div>
+            <p class="decoded" id="gw-txt"></p>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>Tempi del bus RS-485</h2>
+          <p class="sub">Quanto dura un giro completo di letture? 11 bit per carattere, 3,5 caratteri di silenzio tra un frame e l'altro.</p>
+          <div class="row">
+            <label class="fld">Velocità
+              <select id="bus-baud"><option>9600</option><option selected>19200</option><option>38400</option><option>115200</option></select>
+            </label>
+            <label class="fld">Dispositivi sul bus
+              <input type="number" id="bus-n" min="1" max="247" value="20" style="width:6rem">
+            </label>
+            <label class="fld">Registri letti per dispositivo
+              <input type="number" id="bus-regs" min="1" max="125" value="50" style="width:6rem">
+            </label>
+          </div>
+          <div class="big" style="margin-top:16px">
+            <div class="kv"><span class="k">Silenzio tra frame</span><span class="v" id="bus-sil">–</span></div>
+            <div class="kv"><span class="k">Una lettura</span><span class="v" id="bus-one">–</span></div>
+            <div class="kv"><span class="k">Giro completo</span><span class="v" id="bus-all">–</span></div>
+          </div>
+          <p class="muted" style="font-size:.85rem;margin-top:12px">Solo il tempo di trasmissione: ogni slave aggiunge anche il proprio tempo di risposta, spesso decine di millisecondi.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== LAB: IEC 104 ===================== -->
+    <section class="view" id="v-lab-iec104" hidden>
+      <div class="grid2">
+        <div class="panel">
+          <h2>Una sessione tipica</h2>
+          <p class="sub">Centro di controllo e impianto (indirizzo comune 1). In IEC 104 i campi su più byte sono little-endian, al contrario di Modbus.</p>
+          <div class="session" id="iec-session"></div>
+        </div>
+        <div class="panel" style="align-self:start">
+          <h2>Decodificatore APDU</h2>
+          <p class="sub">Incolla un APDU in esadecimale.</p>
+          <input type="text" id="iec-in" value="68 12 0A 00 06 00 0D 01 03 00 01 00 EA 03 00 00 00 48 42 00" aria-label="APDU IEC 104" autocomplete="off" spellcheck="false">
+          <p class="decoded" id="iec-out"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== EXERCISES ===================== -->
+    <section class="view prose" id="v-esercizi" hidden>
+      <h1>Esercizi guidati</h1>
+      <p>Si fanno tutti nel laboratorio di questa pagina. Prova prima da solo, poi apri la soluzione.</p>
+
+      <div class="ex"><h2>1. Leggere i byte</h2>
+        <ol>
+          <li>Apri il <a href="#lab-inverter">laboratorio Inverter</a> e premi «Leggi ora».</li>
+          <li>Nel registro dei frame trova la richiesta che legge il modello 103. Verifica che <code>9C 88</code> valga 40072 e <code>00 32</code> valga 50.</li>
+          <li>Nella risposta, i dati partono dopo il byte count. In quale posizione trovi i due byte della potenza <code>W</code> (offset 12 del modello)?</li>
+        </ol>
+        <details class="sol"><summary>Soluzione</summary><div>0x9C88 = 9·4096 + 12·256 + 8·16 + 8 = 40072; 0x0032 = 50. Ogni registro occupa 2 byte, quindi W (registro 12) occupa i byte di dati 24 e 25, contando da 0. Il valore è big-endian: byte alto × 256 + byte basso.</div></details>
+      </div>
+
+      <div class="ex"><h2>2. Scale factor e «non implementato»</h2>
+        <ol>
+          <li>Nella tabella dei dati decodificati confronta il valore grezzo di <code>PhVphA</code> con quello reale. Qual è lo scale factor?</li>
+          <li>Passa la taglia a 60 kW. Cosa cambia nel valore grezzo di <code>W</code>? Perché?</li>
+          <li>Perché <code>TmpSnk</code> appare come «n/d»?</li>
+        </ol>
+        <details class="sol"><summary>Soluzione</summary><div><code>V_SF = -1</code>: 2301 diventa 230,1 V. Con 60 kW la potenza non sta più in un int16 (massimo 32767), quindi il simulatore usa <code>W_SF = 1</code>: il grezzo 4523 significa 45 230 W. <code>TmpSnk</code> contiene 0x8000, il valore SunSpec di «non implementato» per gli int16.</div></details>
+      </div>
+
+      <div class="ex"><h2>3. Errori Modbus</h2>
+        <p>Premi i quattro pulsanti di «Prova gli errori» e guarda le risposte. Che codice ricevi e perché?</p>
+        <details class="sol"><summary>Soluzione</summary><div>Lettura di 30000: eccezione 02, indirizzo inesistente. Scrittura sul registro W: 02, perché è di sola lettura. Unit ID 7: 0B, il gateway non trova lo slave. Limite 150%: 03, valore fuori range. In tutti i casi il function code della risposta ha il bit alto a 1 (0x83, 0x86, 0x90).</div></details>
+      </div>
+
+      <div class="ex"><h2>4. Limitazione e watchdog</h2>
+        <ol>
+          <li>Invia un limite del 30% con ritorno dopo 15 s.</li>
+          <li>Osserva lo stato passare a THROTTLED e la potenza scendere. Cosa succede dopo 15 s?</li>
+        </ol>
+        <details class="sol"><summary>Soluzione</summary><div>Dopo 15 s senza un nuovo comando l'inverter disattiva il limite da solo (<code>WMaxLim_Ena</code> torna a 0) e riprende a produrre tutto. È una sicurezza: se il controllore si guasta, l'inverter non resta bloccato su un comando vecchio. Per questo un PPC deve rinnovare il comando prima della scadenza.</div></details>
+      </div>
+
+      <div class="ex"><h2>5. Il controllore d'impianto</h2>
+        <ol>
+          <li>Nel <a href="#lab-ppc">laboratorio PPC</a> avvia il controllore con setpoint 25 kW.</li>
+          <li>Prova Ki = 0,1 e Ki = 1,5. Come cambia la convergenza?</li>
+          <li>Premi «Simula guasto del PPC». Cosa fanno gli inverter dopo un paio di secondi?</li>
+        </ol>
+        <details class="sol"><summary>Soluzione</summary><div>Con Ki basso il regolatore è lento ma stabile. Con Ki alto è rapido, ma può superare il setpoint e oscillare; con inverter reali, che hanno rampe e ritardi, il rischio di oscillazione cresce. Dopo il guasto nessuno rinnova il comando: allo scadere dei 2 s di ritorno gli inverter tornano liberi e la potenza al POI sale oltre il setpoint.</div></details>
+      </div>
+
+      <div class="ex"><h2>6. Modbus RTU</h2>
+        <ol>
+          <li>Nel <a href="#lab-rtu">laboratorio RTU</a> calcola il CRC di <code>01 06 9C BC 00 00</code>.</li>
+          <li>Quanto dura un giro di lettura di 20 inverter a 19200 baud, 50 registri ciascuno?</li>
+        </ol>
+        <details class="sol"><summary>Soluzione</summary><div>CRC 0x7E66, trasmesso come <code>66 7E</code> (byte basso per primo). Ogni lettura richiede 8 + 105 byte, circa 68,8 ms con le pause: 20 inverter fanno circa 1,4 s, senza contare il tempo di risposta degli slave.</div></details>
+      </div>
+
+      <div class="ex"><h2>7. IEC 60870-5-104</h2>
+        <ol>
+          <li>Nel <a href="#lab-iec104">laboratorio IEC 104</a> decodifica <code>68 12 0A 00 06 00 0D 01 03 00 01 00 EA 03 00 00 00 48 42 00</code>. Che grandezza, con che indirizzo e che valore?</li>
+          <li>Cosa cambia se l'ultimo byte (qualità) vale <code>80</code>?</li>
+        </ol>
+        <details class="sol"><summary>Soluzione</summary><div>È una misura float (TypeID 13) inviata spontaneamente (causa 3) dalla stazione 1, IOA 1002, valore 50,0: plausibilmente la frequenza. Con qualità 0x80 il bit IV segnala un dato non valido. Il centro di controllo deve mostrarlo come tale, non come 50 Hz buoni.</div></details>
+      </div>
+
+      <div class="ex"><h2>8. Per andare oltre</h2>
+        <ul>
+          <li>Quando avrai un computer, usa la versione Python del laboratorio con librerie reali: <code>pymodbus</code> e <code>pySunSpec2</code>.</li>
+          <li>Wireshark ha i decodificatori per Modbus TCP, IEC 104, MMS e GOOSE: apri una cattura e confrontala con questa pagina.</li>
+          <li>Con un convertitore USB–RS-485 e un contatore Modbus economico puoi fare le stesse prove su un bus vero.</li>
+        </ul>
+      </div>
+    </section>
+
+    <nav class="pager" id="pager" hidden></nav>
+  </main>
+</div>
+
+<script>
+"use strict";
+/* ======================= NAVIGATION ======================= */
+const NAV = [
+  { id: "percorso", n: "", t: "Percorso" },
+  { group: "Lezioni" },
+  { id: "fondamenti", n: "1", t: "Fondamenti" },
+  { id: "modbus", n: "2", t: "Modbus RTU e TCP" },
+  { id: "sunspec", n: "3", t: "SunSpec" },
+  { id: "monitoraggio", n: "4", t: "Monitoraggio" },
+  { id: "controllo", n: "5", t: "Controllo e rete" },
+  { group: "Pratica" },
+  { id: "lab-inverter", n: "L", t: "Laboratorio", match: /^lab-/ },
+  { id: "esercizi", n: "E", t: "Esercizi" },
+  { id: "glossario", n: "G", t: "Glossario e risorse" },
+];
+const LESSONS = ["fondamenti", "modbus", "sunspec", "monitoraggio", "controllo"];
+const VIEWS = ["percorso", ...LESSONS, "lab-inverter", "lab-ppc", "lab-rtu", "lab-iec104", "esercizi", "glossario"];
+const TITLES = { fondamenti: "Fondamenti", modbus: "Modbus RTU e TCP", sunspec: "SunSpec", monitoraggio: "Portali di monitoraggio", controllo: "Controllore d'impianto e rete" };
+
+function buildNav() {
+  const side = document.getElementById("sidenav"), top = document.getElementById("topnav");
+  for (const item of NAV) {
+    if (item.group) {
+      const g = document.createElement("div"); g.className = "navgroup"; g.textContent = item.group; side.appendChild(g);
+      continue;
+    }
+    for (const host of [side, top]) {
+      const a = document.createElement("a");
+      a.className = "navlink"; a.href = "#" + item.id; a.dataset.view = item.id;
+      if (item.match) a.dataset.match = "lab";
+      a.innerHTML = (item.n ? `<span class="n">${item.n}</span>` : "") + `<span>${item.t}</span>`;
+      host.appendChild(a);
+    }
+  }
+}
+
+function route() {
+  let v = (location.hash || "").slice(1);
+  if (!VIEWS.includes(v)) v = "percorso";
+  for (const id of VIEWS) { const el = document.getElementById("v-" + id); if (el) el.hidden = id !== v; }
+  document.getElementById("labhead").hidden = !v.startsWith("lab-");
+  document.querySelectorAll(".navlink").forEach(a => {
+    const on = a.dataset.view === v || (a.dataset.match === "lab" && v.startsWith("lab-"));
+    if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+  });
+  document.querySelectorAll(".tab").forEach(a => {
+    if (a.getAttribute("href") === "#" + v) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+  });
+  const pager = document.getElementById("pager");
+  const i = LESSONS.indexOf(v);
+  if (i >= 0) {
+    const prev = i > 0 ? LESSONS[i - 1] : null, next = i < LESSONS.length - 1 ? LESSONS[i + 1] : null;
+    pager.innerHTML = (prev ? `<a href="#${prev}"><small>Precedente</small>${TITLES[prev]}</a>` : `<a href="#percorso"><small>Indice</small>Percorso</a>`) +
+      (next ? `<a href="#${next}" style="text-align:right"><small>Successiva</small>${TITLES[next]}</a>` : `<a href="#lab-inverter" style="text-align:right"><small>Ora la pratica</small>Laboratorio</a>`);
+    pager.hidden = false;
+  } else pager.hidden = true;
+  const cur = document.querySelector("#topnav [aria-current]");
+  if (cur) cur.scrollIntoView({ block: "nearest", inline: "nearest" });
+  window.scrollTo(0, 0);
+}
+
+/* ======================= BYTE HELPERS ======================= */
+const hex2 = b => b.toString(16).toUpperCase().padStart(2, "0");
+const hexs = arr => Array.from(arr, hex2).join(" ");
+const be16 = (a, i) => (a[i] << 8) | a[i + 1];
+const s16 = v => (v & 0x8000 ? v - 0x10000 : v);
+function parseHex(text) {
+  const clean = text.replace(/0x/gi, "").replace(/[^0-9a-fA-F]/g, "");
+  if (clean.length % 2) throw new Error("Numero dispari di cifre esadecimali.");
+  const out = [];
+  for (let i = 0; i < clean.length; i += 2) out.push(parseInt(clean.slice(i, i + 2), 16));
+  return out;
+}
+const fmtIt = (v, d = 0) => v.toLocaleString("it-IT", { minimumFractionDigits: d, maximumFractionDigits: d });
+function gauss(mu, sigma) { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return mu + sigma * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+const now = () => performance.now() / 1000;
+
+/* ======================= SUNSPEC MODELS ======================= */
+const NI = { uint16: 0xFFFF, enum16: 0xFFFF, int16: 0x8000, sunssf: 0x8000, acc32: 0, bitfield32: 0xFFFFFFFF };
+const M1 = [["Mn","string",16,null,"","Produttore"],["Md","string",16,null,"","Modello"],["Opt","string",8,null,"","Opzioni"],["Vr","string",8,null,"","Versione firmware"],["SN","string",16,null,"","Numero di serie"],["DA","uint16",1,null,"","Indirizzo del dispositivo"],["Pad","pad",1,null,"",""]];
+const M103 = [["A","uint16",1,"A_SF","A","Corrente AC totale"],["AphA","uint16",1,"A_SF","A","Corrente fase A"],["AphB","uint16",1,"A_SF","A","Corrente fase B"],["AphC","uint16",1,"A_SF","A","Corrente fase C"],["A_SF","sunssf",1,null,"",""],
+  ["PPVphAB","uint16",1,"V_SF","V","Tensione concatenata AB"],["PPVphBC","uint16",1,"V_SF","V","Tensione concatenata BC"],["PPVphCA","uint16",1,"V_SF","V","Tensione concatenata CA"],["PhVphA","uint16",1,"V_SF","V","Tensione di fase AN"],["PhVphB","uint16",1,"V_SF","V","Tensione di fase BN"],["PhVphC","uint16",1,"V_SF","V","Tensione di fase CN"],["V_SF","sunssf",1,null,"",""],
+  ["W","int16",1,"W_SF","W","Potenza attiva AC"],["W_SF","sunssf",1,null,"",""],["Hz","uint16",1,"Hz_SF","Hz","Frequenza di rete"],["Hz_SF","sunssf",1,null,"",""],["VA","int16",1,"VA_SF","VA","Potenza apparente"],["VA_SF","sunssf",1,null,"",""],["VAr","int16",1,"VAr_SF","var","Potenza reattiva"],["VAr_SF","sunssf",1,null,"",""],["PF","int16",1,"PF_SF","%","Fattore di potenza"],["PF_SF","sunssf",1,null,"",""],
+  ["WH","acc32",2,"WH_SF","Wh","Energia prodotta (contatore)"],["WH_SF","sunssf",1,null,"",""],["DCA","uint16",1,"DCA_SF","A","Corrente DC"],["DCA_SF","sunssf",1,null,"",""],["DCV","uint16",1,"DCV_SF","V","Tensione DC"],["DCV_SF","sunssf",1,null,"",""],["DCW","int16",1,"DCW_SF","W","Potenza DC"],["DCW_SF","sunssf",1,null,"",""],
+  ["TmpCab","int16",1,"Tmp_SF","°C","Temperatura interna"],["TmpSnk","int16",1,"Tmp_SF","°C","Temperatura dissipatore"],["TmpTrns","int16",1,"Tmp_SF","°C","Temperatura trasformatore"],["TmpOt","int16",1,"Tmp_SF","°C","Altra temperatura"],["Tmp_SF","sunssf",1,null,"",""],
+  ["St","enum16",1,null,"","Stato operativo"],["StVnd","enum16",1,null,"","Stato del produttore"],["Evt1","bitfield32",2,null,"","Eventi e allarmi"],["Evt2","bitfield32",2,null,"","Riservato"],["EvtVnd1","bitfield32",2,null,"","Eventi del produttore 1"],["EvtVnd2","bitfield32",2,null,"","Eventi del produttore 2"],["EvtVnd3","bitfield32",2,null,"","Eventi del produttore 3"],["EvtVnd4","bitfield32",2,null,"","Eventi del produttore 4"]];
+const M123 = [["Conn_WinTms","uint16",1,null,"s",""],["Conn_RvrtTms","uint16",1,null,"s",""],["Conn","enum16",1,null,"","0 = disconnetti, 1 = connetti"],["WMaxLimPct","uint16",1,"WMaxLimPct_SF","%","Limite di potenza in % di WMax"],["WMaxLimPct_WinTms","uint16",1,null,"s",""],["WMaxLimPct_RvrtTms","uint16",1,null,"s","Ritorno automatico dopo N s"],["WMaxLimPct_RmpTms","uint16",1,null,"s","Tempo di rampa"],["WMaxLim_Ena","enum16",1,null,"","0 = limite spento, 1 = attivo"],
+  ["OutPFSet","int16",1,"OutPFSet_SF","",""],["OutPFSet_WinTms","uint16",1,null,"s",""],["OutPFSet_RvrtTms","uint16",1,null,"s",""],["OutPFSet_RmpTms","uint16",1,null,"s",""],["OutPFSet_Ena","enum16",1,null,"",""],["VArWMaxPct","int16",1,"VArPct_SF","%",""],["VArMaxPct","int16",1,"VArPct_SF","%",""],["VArAvalPct","int16",1,"VArPct_SF","%",""],["VArPct_WinTms","uint16",1,null,"s",""],["VArPct_RvrtTms","uint16",1,null,"s",""],["VArPct_RmpTms","uint16",1,null,"s",""],["VArPct_Mod","enum16",1,null,"",""],["VArPct_Ena","enum16",1,null,"",""],["WMaxLimPct_SF","sunssf",1,null,"",""],["OutPFSet_SF","sunssf",1,null,"",""],["VArPct_SF","sunssf",1,null,"",""]];
+const MODELS = { 1: ["Common", M1], 103: ["Inverter trifase", M103], 123: ["Immediate Controls", M123] };
+const STATES = { 1: "OFF", 2: "SLEEPING", 3: "STARTING", 4: "MPPT", 5: "THROTTLED", 6: "SHUTTING DOWN", 7: "FAULT", 8: "STANDBY" };
+const mlen = pts => pts.reduce((s, p) => s + p[2], 0);
+function offsets(pts) { const o = {}; let off = 0; for (const p of pts) { o[p[0]] = off; off += p[2]; } return o; }
+function strToRegs(t, n) { const b = Array.from(t.slice(0, n * 2), c => c.charCodeAt(0)); while (b.length < n * 2) b.push(0); const r = []; for (let i = 0; i < n; i++) r.push((b[2 * i] << 8) | b[2 * i + 1]); return r; }
+function regsToStr(regs) { let s = ""; for (const r of regs) { for (const c of [r >> 8, r & 0xFF]) { if (c === 0) return s.trim(); s += String.fromCharCode(c); } } return s.trim(); }
+function decodeRaw(type, regs) {
+  if (type === "string") return regsToStr(regs);
+  if (type === "pad") return null;
+  let v = (type === "acc32" || type === "bitfield32") ? ((regs[0] * 65536) + regs[1]) : regs[0];
+  if (NI[type] === v) return null;
+  if (type === "int16" || type === "sunssf") v = s16(v);
+  return v;
+}
+function decodeModel(id, regs) {
+  const pts = MODELS[id][1], raw = {}; let off = 0;
+  for (const p of pts) { raw[p[0]] = decodeRaw(p[1], regs.slice(off, off + p[2])); off += p[2]; }
+  const out = {};
+  for (const [name, type, , sfName, unit, desc] of pts) {
+    if (type === "sunssf" || type === "pad") continue;
+    let v = raw[name];
+    if (v !== null && sfName) { const sf = raw[sfName]; v = sf === null ? null : +(v * Math.pow(10, sf)).toFixed(Math.max(0, -sf)); }
+    out[name] = { v, unit, desc, raw: raw[name], sf: sfName ? raw[sfName] : undefined };
+  }
+  return out;
+}
+
+/* ======================= SIMULATED INVERTER (server) ======================= */
+const BASE = 40000;
+class MbExc extends Error { constructor(code) { super("eccezione " + code); this.code = code; } }
+const EXC = { 1: "ILLEGAL FUNCTION", 2: "ILLEGAL DATA ADDRESS", 3: "ILLEGAL DATA VALUE", 4: "SERVER DEVICE FAILURE", 6: "SERVER DEVICE BUSY", 11: "GATEWAY TARGET FAILED TO RESPOND" };
+const EXC_IT = { 1: "funzione non supportata", 2: "indirizzo inesistente o di sola lettura", 3: "valore fuori range", 11: "il gateway non ha ricevuto risposta dallo slave" };
+const FCN = { 3: "Read Holding Registers", 4: "Read Input Registers", 6: "Write Single Register", 16: "Write Multiple Registers" };
+function chooseSf(maxAbs) { let sf = 0; while (maxAbs / Math.pow(10, sf) > 32767) sf++; return sf; }
+
+class Inverter {
+  constructor({ unit = 1, wmax = 20000, day = 600, serial = "LAB0000001", t0 = now() } = {}) {
+    Object.assign(this, { unit, wmax, day, t0, last: now(), energy: 1234567, limitAt: null, available: 0 });
+    this.regs = new Array(150).fill(0); this.addr = {}; this.writable = new Set();
+    this.set(BASE, [0x5375, 0x6E53]);
+    let a = BASE + 2;
+    for (const id of [1, 103, 123]) {
+      const pts = MODELS[id][1], L = mlen(pts), off = offsets(pts);
+      this.set(a, [id, L]);
+      for (const k in off) this.addr[id + "." + k] = a + 2 + off[k];
+      a += 2 + L;
+    }
+    this.set(a, [0xFFFF, 0]);
+    for (const [n, t, s] of [["Mn", "LabSolar", 16], ["Md", "SIM-INV-3P", 16], ["Opt", "", 8], ["Vr", "1.0.0", 8], ["SN", serial, 16]]) this.set(this.addr["1." + n], strToRegs(t, s));
+    this.put("1.DA", unit); this.put("1.Pad", 0x8000);
+    this.wsf = chooseSf(wmax * 1.1);
+    for (const [n, sf] of [["A_SF", -2], ["V_SF", -1], ["W_SF", this.wsf], ["Hz_SF", -2], ["VA_SF", this.wsf], ["VAr_SF", this.wsf], ["PF_SF", -1], ["WH_SF", 0], ["DCA_SF", -2], ["DCV_SF", -1], ["DCW_SF", this.wsf], ["Tmp_SF", -1]]) this.put("103." + n, sf);
+    for (const n of ["TmpSnk", "TmpTrns", "TmpOt"]) this.put("103." + n, 0x8000);
+    this.put("103.StVnd", 0xFFFF);
+    for (const n of ["Evt2", "EvtVnd1", "EvtVnd2", "EvtVnd3", "EvtVnd4"]) this.set(this.addr["103." + n], [0xFFFF, 0xFFFF]);
+    for (const [n, t] of M123) this.put("123." + n, NI[t] ?? 0);
+    for (const [n, v] of [["Conn_WinTms", 0], ["Conn_RvrtTms", 0], ["Conn", 1], ["WMaxLimPct", 10000], ["WMaxLimPct_WinTms", 0], ["WMaxLimPct_RvrtTms", 0], ["WMaxLimPct_RmpTms", 0], ["WMaxLim_Ena", 0], ["WMaxLimPct_SF", -2]]) this.put("123." + n, v);
+    for (const n of ["Conn_WinTms", "Conn_RvrtTms", "Conn", "WMaxLimPct", "WMaxLimPct_WinTms", "WMaxLimPct_RvrtTms", "WMaxLimPct_RmpTms", "WMaxLim_Ena"]) this.writable.add(this.addr["123." + n]);
+    this.update();
+  }
+  set(a, vals) { vals.forEach((v, i) => { this.regs[a - BASE + i] = v & 0xFFFF; }); }
+  put(p, v) { this.regs[this.addr[p] - BASE] = v & 0xFFFF; }
+  get(p) { return this.regs[this.addr[p] - BASE]; }
+  limitW() {
+    if (this.get("123.WMaxLim_Ena") !== 1) return this.wmax;
+    return this.wmax * this.get("123.WMaxLimPct") * Math.pow(10, s16(this.get("123.WMaxLimPct_SF"))) / 100;
+  }
+  update() {
+    const t = now(), dt = t - this.last; this.last = t;
+    const phase = ((t - this.t0) / this.day + 0.25) % 1;
+    const sun = phase < 0.6 ? Math.sin(Math.PI * phase / 0.6) : 0;
+    this.available = this.wmax * sun * (0.95 + 0.05 * Math.random());
+    const rv = this.get("123.WMaxLimPct_RvrtTms");
+    if (this.get("123.WMaxLim_Ena") === 1 && rv !== 0 && rv !== 0xFFFF && this.limitAt !== null && t - this.limitAt > rv) this.put("123.WMaxLim_Ena", 0);
+    const lim = this.limitW(), conn = this.get("123.Conn") === 1;
+    let p = conn ? Math.min(this.available, lim) : 0, st;
+    if (!conn) st = 8; else if (this.available < 50) { st = 2; p = 0; } else if (lim < this.available) st = 5; else st = 4;
+    this.power = p;
+    this.energy += p * dt / 3600;
+    const sfw = Math.pow(10, this.wsf);
+    const vph = [gauss(230, .8), gauss(230, .8), gauss(230, .8)], iph = vph.map(v => p / 3 / v);
+    const dcv = p > 0 ? 620 + 60 * sun : 0, dcw = p > 0 ? p / 0.975 : 0;
+    this.put("103.A", Math.round(iph.reduce((s, x) => s + x, 0) * 100));
+    "ABC".split("").forEach((ph, i) => { this.put("103.Aph" + ph, Math.round(iph[i] * 100)); this.put("103.PhVph" + ph, Math.round(vph[i] * 10)); });
+    [["PPVphAB", 0, 1], ["PPVphBC", 1, 2], ["PPVphCA", 2, 0]].forEach(([n, a, b]) => this.put("103." + n, Math.round((vph[a] + vph[b]) / 2 * Math.sqrt(3) * 10)));
+    this.put("103.W", Math.round(p / sfw)); this.put("103.Hz", Math.round(gauss(50, .01) * 100));
+    this.put("103.VA", Math.round(p / sfw)); this.put("103.VAr", 0); this.put("103.PF", 1000);
+    const wh = Math.floor(this.energy); this.set(this.addr["103.WH"], [Math.floor(wh / 65536), wh % 65536]);
+    this.put("103.DCV", Math.round(dcv * 10)); this.put("103.DCA", dcv ? Math.round(dcw / dcv * 100) : 0); this.put("103.DCW", Math.round(dcw / sfw));
+    this.put("103.TmpCab", Math.round((25 + 20 * p / this.wmax) * 10)); this.put("103.St", st);
+    this.set(this.addr["103.Evt1"], [0, 0]);
+  }
+  read(a, n) { if (a < BASE || a + n > BASE + this.regs.length) throw new MbExc(2); this.update(); return this.regs.slice(a - BASE, a - BASE + n); }
+  write(a, vals) {
+    for (let i = 0; i < vals.length; i++) if (!this.writable.has(a + i)) throw new MbExc(2);
+    const pa = this.addr["123.WMaxLimPct"];
+    if (pa >= a && pa < a + vals.length && vals[pa - a] > 10000) throw new MbExc(3);
+    this.set(a, vals); this.limitAt = now(); this.update();
+  }
+  handlePdu(pdu) {
+    const fc = pdu[0];
+    try {
+      if (fc === 3 || fc === 4) {
+        const a = be16(pdu, 1), n = be16(pdu, 3);
+        if (n < 1 || n > 125) throw new MbExc(3);
+        const regs = this.read(a, n), out = [fc, 2 * n];
+        for (const r of regs) out.push(r >> 8, r & 0xFF);
+        return out;
+      }
+      if (fc === 6) { this.write(be16(pdu, 1), [be16(pdu, 3)]); return pdu.slice(0, 5); }
+      if (fc === 16) {
+        const a = be16(pdu, 1), n = be16(pdu, 3), nb = pdu[5];
+        if (n < 1 || n > 123 || nb !== 2 * n) throw new MbExc(3);
+        const vals = []; for (let i = 0; i < n; i++) vals.push(be16(pdu, 6 + 2 * i));
+        this.write(a, vals); return pdu.slice(0, 5);
+      }
+      throw new MbExc(1);
+    } catch (e) { if (e instanceof MbExc) return [fc | 0x80, e.code]; throw e; }
+  }
+  serve(adu) {
+    const tid = be16(adu, 0), unit = adu[6], pdu = adu.slice(7);
+    const resp = (unit === this.unit || unit === 255) ? this.handlePdu(pdu) : [pdu[0] | 0x80, 0x0B];
+    return buildAdu(tid, unit, resp);
+  }
+}
+function buildAdu(tid, unit, pdu) { const len = pdu.length + 1; return [tid >> 8, tid & 0xFF, 0, 0, len >> 8, len & 0xFF, unit, ...pdu]; }
+
+/* ======================= CLIENT (master) ======================= */
+class Client {
+  constructor(inv, unit = 1, onFrame = null) { this.inv = inv; this.unit = unit; this.tid = 0; this.onFrame = onFrame; this.quiet = false; }
+  transact(pdu) {
+    this.tid = (this.tid + 1) & 0xFFFF;
+    const req = buildAdu(this.tid, this.unit, pdu);
+    const resp = this.inv.serve(req);
+    if (this.onFrame) this.onFrame(req, resp, this.quiet);
+    const rp = resp.slice(7);
+    if (rp[0] & 0x80) throw new MbExc(rp[1]);
+    return rp;
+  }
+  readHR(a, n) {
+    const out = [];
+    while (n > 0) { const k = Math.min(n, 125); const rp = this.transact([3, a >> 8, a & 0xFF, k >> 8, k & 0xFF]); for (let i = 0; i < rp[1] / 2; i++) out.push(be16(rp, 2 + 2 * i)); a += k; n -= k; }
+    return out;
+  }
+  writeSingle(a, v) { this.transact([6, a >> 8, a & 0xFF, (v >> 8) & 0xFF, v & 0xFF]); }
+  writeMultiple(a, vals) { const p = [16, a >> 8, a & 0xFF, 0, vals.length, vals.length * 2]; for (const v of vals) p.push((v >> 8) & 0xFF, v & 0xFF); this.transact(p); }
+}
+function discover(c) {
+  for (const base of [40000, 0, 50000]) {
+    let m;
+    try { m = c.readHR(base, 2); } catch (e) { continue; }
+    if (m[0] !== 0x5375 || m[1] !== 0x6E53) continue;
+    const models = []; let a = base + 2;
+    for (;;) { const [id, L] = c.readHR(a, 2); if (id === 0xFFFF) break; models.push({ id, start: a + 2, len: L }); a += 2 + L; }
+    return { base, models };
+  }
+  throw new Error("Marker SunS non trovato");
+}
+const findModel = (models, id) => models.find(m => m.id === id);
+function readModel(c, models, id) { const m = findModel(models, id); return decodeModel(id, c.readHR(m.start, m.len)); }
+function setLimit(c, models, pct, revert) {
+  const start = findModel(models, 123).start, off = offsets(M123);
+  if (pct === null) { c.writeSingle(start + off.WMaxLim_Ena, 0); return; }
+  const sf = s16(c.readHR(start + off.WMaxLimPct_SF, 1)[0]);
+  c.writeMultiple(start + off.WMaxLimPct, [Math.round(pct / Math.pow(10, sf)), 0, revert, 0, 1]);
+}
+
+/* ======================= FRAME ANNOTATION ======================= */
+function segmentsTcp(adu, isReq) {
+  const s = [
+    { b: adu.slice(0, 2), c: "mbap", l: "Transaction ID" }, { b: adu.slice(2, 4), c: "mbap", l: "Protocol ID" },
+    { b: adu.slice(4, 6), c: "mbap", l: "Length" }, { b: adu.slice(6, 7), c: "mbap", l: "Unit ID" },
+  ];
+  const p = adu.slice(7), fc = p[0];
+  if (fc & 0x80) { s.push({ b: [fc], c: "exc", l: "FC + 0x80" }, { b: [p[1]], c: "exc", l: "Codice errore" }); return s; }
+  s.push({ b: [fc], c: "fc", l: "Function code" });
+  if ((fc === 3 || fc === 4) && isReq) s.push({ b: p.slice(1, 3), c: "addr", l: "Indirizzo" }, { b: p.slice(3, 5), c: "addr", l: "Quantità" });
+  else if (fc === 3 || fc === 4) s.push({ b: [p[1]], c: "addr", l: "Byte count" }, { b: p.slice(2), c: "data", l: `Dati (${p[1]} byte)` });
+  else if (fc === 6) s.push({ b: p.slice(1, 3), c: "addr", l: "Indirizzo" }, { b: p.slice(3, 5), c: "data", l: "Valore" });
+  else if (fc === 16) { s.push({ b: p.slice(1, 3), c: "addr", l: "Indirizzo" }, { b: p.slice(3, 5), c: "addr", l: "Quantità" }); if (isReq) s.push({ b: [p[5]], c: "addr", l: "Byte count" }, { b: p.slice(6), c: "data", l: "Valori" }); }
+  else s.push({ b: p.slice(1), c: "data", l: "Dati" });
+  return s;
+}
+function renderSegments(segs, maxData = 20) {
+  return segs.map(sg => {
+    let b = sg.b, txt = hexs(b);
+    if (sg.c === "data" && b.length > maxData) txt = hexs(b.slice(0, maxData)) + ` … +${b.length - maxData}`;
+    return `<span class="seg c-${sg.c}"><b>${txt}</b><i>${sg.l}</i></span>`;
+  }).join("");
+}
+function explainTcp(adu, isReq) {
+  const tid = be16(adu, 0), unit = adu[6], p = adu.slice(7), fc = p[0];
+  let t = `TID ${tid}, unit ${unit}. `;
+  if (fc & 0x80) return t + `Eccezione 0x${hex2(p[1])} ${EXC[p[1]] || ""}: ${EXC_IT[p[1]] || ""}.`;
+  t += `FC ${hex2(fc)} ${FCN[fc] || ""}`;
+  if ((fc === 3 || fc === 4) && isReq) t += `: ${be16(p, 3)} registri da ${be16(p, 1)}.`;
+  else if (fc === 3 || fc === 4) { const n = p[1] / 2, r = []; for (let i = 0; i < Math.min(n, 6); i++) r.push(be16(p, 2 + 2 * i)); t += `: ${n} registri [${r.join(", ")}${n > 6 ? ", …" : ""}].`; }
+  else if (fc === 6) t += `: registro ${be16(p, 1)} = ${be16(p, 3)}${isReq ? "" : " (eco: scrittura riuscita)"}.`;
+  else if (fc === 16) { if (isReq) { const v = []; for (let i = 0; i < be16(p, 3); i++) v.push(be16(p, 6 + 2 * i)); t += `: ${be16(p, 3)} registri da ${be16(p, 1)} = [${v.join(", ")}].`; } else t += `: confermati ${be16(p, 3)} registri da ${be16(p, 1)}.`; }
+  return t;
+}
+
+/* ======================= LAB 1: INVERTER ======================= */
+const L1 = { inv: null, client: null, models: null, hist: [], autoTimer: null, lastLimitMsg: "" };
+const traceEl = () => document.getElementById("trace");
+function logFrame(req, resp, quiet) {
+  if (quiet && !document.getElementById("tr-auto").checked) return;
+  const box = traceEl();
+  const isErr = resp[7] & 0x80;
+  const html = `<div class="tx req"><span class="dir">Client → inverter</span><div class="bytes">${renderSegments(segmentsTcp(req, true))}</div><span class="exp">${explainTcp(req, true)}</span></div>` +
+    `<div class="tx ${isErr ? "err" : "resp"}"><span class="dir">Inverter → client</span><div class="bytes">${renderSegments(segmentsTcp(resp, false))}</div><span class="exp">${explainTcp(resp, false)}</span></div>`;
+  const wrap = document.createElement("div"); wrap.style.display = "grid"; wrap.style.gap = "8px"; wrap.innerHTML = html;
+  box.prepend(wrap);
+  while (box.children.length > 30) box.lastChild.remove();
+}
+function makeInverter(wmax) {
+  L1.inv = new Inverter({ wmax, t0: PAGE_T0 });
+  L1.client = new Client(L1.inv, 1, logFrame);
+  L1.models = null; L1.hist = [];
+}
+function l1Discover() {
+  const r = discover(L1.client); L1.models = r.models;
+  const common = readModel(L1.client, r.models, 1);
+  document.getElementById("disc-out").innerHTML = `Marker <span class="mono">SunS</span> trovato a ${r.base}. Modelli: ` +
+    r.models.map(m => `<b>${m.id}</b> ${MODELS[m.id][0]} (${m.start}–${m.start + m.len - 1})`).join(", ") +
+    `. Dispositivo: ${common.Mn.v} ${common.Md.v}, firmware ${common.Vr.v}, seriale ${common.SN.v}.`;
+}
+function l1Read(quiet) {
+  if (!L1.models) l1Discover();
+  L1.client.quiet = quiet;
+  const d = readModel(L1.client, L1.models, 103), c = readModel(L1.client, L1.models, 123);
+  L1.client.quiet = false;
+  const lim = c.WMaxLim_Ena.v === 1 ? L1.inv.wmax * c.WMaxLimPct.v / 100 : null;
+  L1.hist.push({ w: d.W.v ?? 0, lim }); if (L1.hist.length > 120) L1.hist.shift();
+  document.getElementById("inv-w").innerHTML = `${fmtIt((d.W.v ?? 0) / 1000, 2)} <small>kW</small>`;
+  document.getElementById("inv-wh").innerHTML = `${fmtIt(d.WH.v / 1000, 1)} <small>kWh</small>`;
+  const st = document.getElementById("inv-st"); st.textContent = `${d.St.v} · ${STATES[d.St.v]}`; st.className = "pill st-" + d.St.v;
+  const rows = [];
+  for (const [k, o] of Object.entries(d)) {
+    const val = o.v === null ? "n/d" : `${typeof o.v === "number" ? o.v.toLocaleString("it-IT") : o.v} ${o.unit}`;
+    const raw = o.raw === null ? (k.startsWith("Evt") || k === "StVnd" || k.startsWith("Tmp") ? "non impl." : "–") : o.raw + (o.sf !== undefined && o.sf !== null ? ` · SF ${o.sf}` : "");
+    const desc = k === "St" && o.v !== null ? `${o.desc}: ${STATES[o.v]}` : o.desc;
+    rows.push(`<tr><td class="mono">${k}</td><td class="${o.v === null ? "nd" : ""}">${val}</td><td class="mono">${raw}</td><td>${desc}</td></tr>`);
+  }
+  for (const k of ["Conn", "WMaxLimPct", "WMaxLimPct_RvrtTms", "WMaxLim_Ena"]) {
+    const o = c[k];
+    rows.push(`<tr><td class="mono">123.${k}</td><td>${o.v} ${o.unit}</td><td class="mono">${o.raw}${o.sf !== undefined ? ` · SF ${o.sf}` : ""}</td><td>${o.desc}</td></tr>`);
+  }
+  document.querySelector("#t103 tbody").innerHTML = rows.join("");
+  drawInvChart();
+  const res = document.getElementById("lim-res");
+  if (L1.lastLimitMsg && c.WMaxLim_Ena.v === 0 && L1.limitActive) {
+    L1.limitActive = false;
+    res.className = "result good"; res.textContent = "Il limite è decaduto: nessuno ha rinnovato il comando entro il tempo di ritorno, quindi l'inverter è tornato libero (WMaxLim_Ena = 0).";
+  }
+}
+function chartPath(vals, x, y) { return vals.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(""); }
+function drawInvChart() {
+  const svg = document.getElementById("inv-chart"), W = 600, H = 150, pl = 40, pr = 8, pt = 10, pb = 22;
+  const max = L1.inv.wmax * 1.05, n = 120;
+  const x = i => pl + (W - pl - pr) * i / (n - 1), y = v => pt + (H - pt - pb) * (1 - v / max);
+  const off = n - L1.hist.length;
+  let g = "";
+  const step = L1.inv.wmax / 2;
+  for (let v = 0; v <= L1.inv.wmax + 1; v += step) g += `<line class="grid" x1="${pl}" x2="${W - pr}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${pl - 6}" y="${y(v) + 4}" text-anchor="end">${v / 1000}</text>`;
+  g += `<text class="axis" x="${pl - 6}" y="${H - 4}" text-anchor="end">kW</text><text class="axis" x="${W - pr}" y="${H - 4}" text-anchor="end">ultimi 4 minuti →</text>`;
+  if (L1.hist.length > 1) {
+    const ws = L1.hist.map(h => h.w), xi = i => x(i + off);
+    g += `<path class="area" d="${chartPath(ws, xi, y)}L${xi(ws.length - 1)},${y(0)}L${xi(0)},${y(0)}Z"/>`;
+    g += `<path class="l-main" d="${chartPath(ws, xi, y)}"/>`;
+    let seg = [];
+    const flush = () => { if (seg.length > 1) g += `<path class="l-sp" d="${seg.map((p, k) => `${k ? "L" : "M"}${xi(p[0])},${y(p[1])}`).join("")}"/>`; seg = []; };
+    L1.hist.forEach((h, i) => { if (h.lim !== null) seg.push([i, h.lim]); else flush(); }); flush();
+    g += `<circle class="dot" cx="${xi(ws.length - 1)}" cy="${y(ws[ws.length - 1])}" r="3.5"/>`;
+  }
+  svg.innerHTML = g;
+}
+function setAuto(on) {
+  const b = document.getElementById("b-auto"); b.setAttribute("aria-pressed", on ? "true" : "false");
+  clearInterval(L1.autoTimer); L1.autoTimer = on ? setInterval(() => l1Read(true), 2000) : null;
+}
+function errDemo(fn, label) {
+  const res = document.getElementById("err-res");
+  try { fn(); res.className = "result"; res.textContent = label + ": nessun errore."; }
+  catch (e) {
+    if (e instanceof MbExc) { res.className = "result bad"; res.innerHTML = `${label}: eccezione <b class="mono">0x${hex2(e.code)}</b> ${EXC[e.code]}, ${EXC_IT[e.code]}.`; }
+    else throw e;
+  }
+}
+function initLab1() {
+  makeInverter(20000);
+  l1Discover(); l1Read(false);
+  setAuto(true);
+  document.getElementById("b-disc").onclick = () => { L1.models = null; l1Discover(); };
+  document.getElementById("b-read").onclick = () => l1Read(false);
+  document.getElementById("b-auto").onclick = e => setAuto(e.currentTarget.getAttribute("aria-pressed") !== "true");
+  document.getElementById("inv-size").onchange = e => { makeInverter(+e.target.value); traceEl().innerHTML = ""; l1Discover(); l1Read(false); };
+  const lp = document.getElementById("lim-pct"); lp.oninput = () => document.getElementById("lim-val").textContent = lp.value + "%";
+  document.getElementById("b-lim").onclick = () => {
+    const pct = +lp.value, rv = Math.max(0, Math.min(600, Math.round(+document.getElementById("lim-rvrt").value || 0)));
+    if (!L1.models) l1Discover();
+    setLimit(L1.client, L1.models, pct, rv);
+    L1.limitActive = true;
+    L1.lastLimitMsg = `Limite al ${pct}% inviato con FC16 (5 registri: percentuale, finestra, ritorno, rampa, abilitazione).` + (rv ? ` Se nessuno lo rinnova, decade tra ${rv} s.` : " Resta attivo finché non lo rimuovi.");
+    const res = document.getElementById("lim-res"); res.className = "result"; res.textContent = L1.lastLimitMsg;
+    l1Read(false);
+  };
+  document.getElementById("b-rel").onclick = () => {
+    if (!L1.models) l1Discover();
+    setLimit(L1.client, L1.models, null, 0); L1.limitActive = false;
+    const res = document.getElementById("lim-res"); res.className = "result"; res.textContent = "Limite rimosso con FC06: WMaxLim_Ena = 0.";
+    l1Read(false);
+  };
+  document.getElementById("e-addr").onclick = () => errDemo(() => L1.client.readHR(30000, 2), "Lettura di 2 registri da 30000");
+  document.getElementById("e-ro").onclick = () => errDemo(() => L1.client.writeSingle(findModel(L1.models, 103).start + offsets(M103).W, 0), "Scrittura su W (" + (findModel(L1.models, 103).start + 12) + ")");
+  document.getElementById("e-unit").onclick = () => errDemo(() => { const c = new Client(L1.inv, 7, logFrame); c.tid = L1.client.tid; c.readHR(40000, 2); L1.client.tid = c.tid; }, "Lettura con Unit ID 7");
+  document.getElementById("e-val").onclick = () => errDemo(() => setLimit(L1.client, L1.models, 150, 0), "Limite al 150%");
+}
+
+/* ======================= LAB 2: PPC ======================= */
+const L2 = { invs: [], clients: [], models: [], pct: 100, timer: null, sampler: null, hist: [], running: false, crashed: false, cycles: 0 };
+function initLab2() {
+  L2.invs = [new Inverter({ wmax: 20000, serial: "LAB0000001", t0: PAGE_T0 }), new Inverter({ wmax: 20000, serial: "LAB0000002", t0: PAGE_T0 - 4 })];
+  L2.clients = L2.invs.map(inv => new Client(inv, 1));
+  L2.models = L2.clients.map(c => discover(c).models);
+  const sp = document.getElementById("ppc-sp");
+  sp.oninput = () => { document.getElementById("sp-val").textContent = fmtIt(sp.value / 1000, 1) + " kW"; };
+  document.getElementById("ppc-start").onclick = ppcStart;
+  document.getElementById("ppc-stop").onclick = () => ppcStop(true);
+  document.getElementById("ppc-crash").onclick = () => {
+    if (!L2.running) return;
+    ppcStop(false); L2.crashed = true;
+    const r = document.getElementById("ppc-res"); r.className = "result bad";
+    r.textContent = "PPC guasto: nessuno rinnova più il limite e nessuno lo rimuove. Gli inverter restano limitati solo fino allo scadere del ritorno (2 s), poi tornano liberi.";
+  };
+  L2.sampler = setInterval(ppcSample, 500);
+  ppcSample();
+}
+function ppcStart() {
+  if (L2.running) return;
+  L2.running = true; L2.crashed = false; L2.pct = 100; L2.cycles = 0;
+  document.getElementById("ppc-log").textContent = "";
+  const r = document.getElementById("ppc-res"); r.className = "result good"; r.textContent = "PPC in funzione: ciclo ogni 0,5 s, 2 letture e 2 scritture Modbus per ciclo.";
+  L2.timer = setInterval(ppcCycle, 500); ppcCycle();
+}
+function ppcStop(release) {
+  clearInterval(L2.timer); L2.timer = null; L2.running = false;
+  if (release) {
+    L2.clients.forEach((c, i) => setLimit(c, L2.models[i], null, 0));
+    const r = document.getElementById("ppc-res"); r.className = "result"; r.textContent = "PPC fermato in modo pulito: limiti rimossi, gli inverter producono liberamente.";
+  }
+}
+function ppcCycle() {
+  const sp = +document.getElementById("ppc-sp").value, ki = +document.getElementById("ppc-ki").value;
+  const cap = 20000 * L2.invs.length;
+  const total = L2.clients.reduce((s, c, i) => s + (readModel(c, L2.models[i], 103).W.v || 0), 0);
+  const err = sp - total;
+  L2.pct = Math.min(100, Math.max(0, L2.pct + ki * err / cap * 100));
+  L2.clients.forEach((c, i) => setLimit(c, L2.models[i], Math.round(L2.pct * 100) / 100, 2));
+  L2.cycles++;
+  const log = document.getElementById("ppc-log");
+  const line = `#${String(L2.cycles).padStart(3)}  POI ${fmtIt(total / 1000, 2).padStart(6)} kW  errore ${(err >= 0 ? "+" : "") + fmtIt(err / 1000, 2)} kW  limite ${fmtIt(L2.pct, 2)}%`;
+  log.textContent = line + "\n" + log.textContent.split("\n").slice(0, 40).join("\n");
+}
+function ppcSample() {
+  L2.invs.forEach(inv => inv.update());
+  const total = L2.invs.reduce((s, inv) => s + inv.power, 0), avail = L2.invs.reduce((s, inv) => s + inv.available, 0);
+  const sp = L2.running ? +document.getElementById("ppc-sp").value : null;
+  L2.hist.push({ total, avail, sp }); if (L2.hist.length > 120) L2.hist.shift();
+  document.getElementById("poi-w").innerHTML = `${fmtIt(total / 1000, 2)} <small>kW</small>`;
+  document.getElementById("poi-sp").innerHTML = sp === null ? `<small>PPC fermo</small>` : `${fmtIt(sp / 1000, 1)} <small>kW</small>`;
+  const anyLim = L2.invs.some(inv => inv.get("123.WMaxLim_Ena") === 1);
+  document.getElementById("poi-pct").innerHTML = anyLim ? `${fmtIt(L2.invs[0].limitW() / 200, 1)} <small>%</small>` : `<small>nessuno</small>`;
+  document.getElementById("ppc-invs").innerHTML = L2.invs.map((inv, i) => {
+    const st = inv.get("103.St"), en = inv.get("123.WMaxLim_Ena") === 1;
+    return `<div class="invcard"><div class="h"><span>Inverter ${i + 1}</span><span class="pill st-${st}">${STATES[st]}</span></div>` +
+      `<div class="kv"><span class="v">${fmtIt(inv.power / 1000, 2)} <small>kW</small></span></div>` +
+      `<div class="mini">Disponibile ${fmtIt(inv.available / 1000, 2)} kW · limite ${en ? fmtIt(inv.limitW() / 200, 1) + "%" : "spento"}</div></div>`;
+  }).join("");
+  drawPpcChart();
+}
+function drawPpcChart() {
+  const svg = document.getElementById("ppc-chart"), W = 600, H = 220, pl = 40, pr = 8, pt = 10, pb = 22, n = 120, max = 42000;
+  const x = i => pl + (W - pl - pr) * i / (n - 1), y = v => pt + (H - pt - pb) * (1 - v / max);
+  const off = n - L2.hist.length, xi = i => x(i + off);
+  let g = "";
+  for (let v = 0; v <= 40000; v += 10000) g += `<line class="grid" x1="${pl}" x2="${W - pr}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${pl - 6}" y="${y(v) + 4}" text-anchor="end">${v / 1000}</text>`;
+  g += `<text class="axis" x="${pl - 6}" y="${H - 4}" text-anchor="end">kW</text><text class="axis" x="${W - pr}" y="${H - 4}" text-anchor="end">ultimi 60 s →</text>`;
+  if (L2.hist.length > 1) {
+    g += `<path class="l-av" d="${chartPath(L2.hist.map(h => h.avail), xi, y)}"/>`;
+    let seg = [];
+    const flush = () => { if (seg.length > 1) g += `<path class="l-sp" d="${seg.map((p, k) => `${k ? "L" : "M"}${xi(p[0])},${y(p[1])}`).join("")}"/>`; seg = []; };
+    L2.hist.forEach((h, i) => { if (h.sp !== null) seg.push([i, h.sp]); else flush(); }); flush();
+    const ts = L2.hist.map(h => h.total);
+    g += `<path class="area" d="${chartPath(ts, xi, y)}L${xi(ts.length - 1)},${y(0)}L${xi(0)},${y(0)}Z"/><path class="l-main" d="${chartPath(ts, xi, y)}"/>`;
+    g += `<circle class="dot" cx="${xi(ts.length - 1)}" cy="${y(ts[ts.length - 1])}" r="3.5"/>`;
+  }
+  svg.innerHTML = g;
+}
+
+/* ======================= LAB 3: RTU ======================= */
+function crc16(bytes) { let crc = 0xFFFF; for (const b of bytes) { crc ^= b; for (let i = 0; i < 8; i++) crc = (crc & 1) ? (crc >>> 1) ^ 0xA001 : crc >>> 1; } return crc; }
+const silentMs = baud => baud > 19200 ? 1.75 : 3.5 * 11 / baud * 1000;
+function rtuSegments(f) {
+  const p = f.slice(1, -2), s = [{ b: [f[0]], c: "mbap", l: "Slave" }, { b: [p[0]], c: p[0] & 0x80 ? "exc" : "fc", l: "Function code" }];
+  if (p.length > 1) s.push({ b: p.slice(1), c: "addr", l: "Dati della PDU" });
+  s.push({ b: f.slice(-2), c: "crc", l: "CRC (basso, alto)" });
+  return s;
+}
+function updRtu() {
+  const out = document.getElementById("rtu-out"), txt = document.getElementById("rtu-txt");
+  try {
+    const b = parseHex(document.getElementById("rtu-in").value);
+    if (b.length < 2) throw new Error("Servono almeno indirizzo e function code.");
+    const crc = crc16(b), f = [...b, crc & 0xFF, crc >> 8];
+    out.innerHTML = renderSegments(rtuSegments(f), 64);
+    txt.textContent = `CRC = 0x${crc.toString(16).toUpperCase().padStart(4, "0")}, trasmesso con il byte basso per primo: ${hex2(crc & 0xFF)} ${hex2(crc >> 8)}.\nFrame completo: ${hexs(f)}`;
+  } catch (e) { out.innerHTML = ""; txt.textContent = e.message; }
+}
+function updGw() {
+  const tcp = document.getElementById("gw-tcp"), rtu = document.getElementById("gw-rtu"), txt = document.getElementById("gw-txt");
+  try {
+    const a = parseHex(document.getElementById("gw-in").value);
+    if (a.length < 8) throw new Error("Un frame Modbus TCP ha almeno 8 byte (7 di MBAP più il function code).");
+    if (be16(a, 4) !== a.length - 6) throw new Error(`Il campo Length vale ${be16(a, 4)}, ma dopo di lui ci sono ${a.length - 6} byte.`);
+    tcp.innerHTML = renderSegments(segmentsTcp(a, true), 64);
+    const body = [a[6], ...a.slice(7)], crc = crc16(body), f = [...body, crc & 0xFF, crc >> 8];
+    rtu.innerHTML = renderSegments(rtuSegments(f), 64);
+    txt.textContent = `L'Unit ID ${a[6]} diventa l'indirizzo dello slave. La PDU resta identica (${hexs(a.slice(7))}). Il CRC sostituisce la protezione che in Ethernet offre TCP.`;
+  } catch (e) { tcp.innerHTML = ""; rtu.innerHTML = ""; txt.textContent = e.message; }
+}
+function updBus() {
+  const baud = +document.getElementById("bus-baud").value;
+  const n = Math.max(1, Math.min(247, +document.getElementById("bus-n").value || 1));
+  const regs = Math.max(1, Math.min(125, +document.getElementById("bus-regs").value || 1));
+  const sil = silentMs(baud), one = (8 + 5 + 2 * regs) * 11 / baud * 1000 + 2 * sil;
+  document.getElementById("bus-sil").innerHTML = `${fmtIt(sil, 2)} <small>ms</small>`;
+  document.getElementById("bus-one").innerHTML = `${fmtIt(one, 1)} <small>ms</small>`;
+  document.getElementById("bus-all").innerHTML = one * n >= 1000 ? `${fmtIt(one * n / 1000, 2)} <small>s</small>` : `${fmtIt(one * n, 0)} <small>ms</small>`;
+}
+function initLab3() {
+  for (const [id, fn] of [["rtu-in", updRtu], ["gw-in", updGw], ["bus-baud", updBus], ["bus-n", updBus], ["bus-regs", updBus]]) document.getElementById(id).addEventListener("input", fn);
+  updRtu(); updGw(); updBus();
+  document.getElementById("home-frame").innerHTML = renderSegments(segmentsTcp([0, 7, 0, 0, 0, 6, 1, 3, 0x9C, 0x88, 0, 0x32], true));
+}
+
+/* ======================= LAB 4: IEC 104 ======================= */
+const U_FN = { 0x07: "STARTDT act: avvia il trasferimento dati", 0x0B: "STARTDT con: conferma", 0x13: "STOPDT act", 0x23: "STOPDT con", 0x43: "TESTFR act: test del collegamento", 0x83: "TESTFR con" };
+const TYPES = { 1: "M_SP_NA_1 segnale singolo", 3: "M_DP_NA_1 segnale doppio", 13: "M_ME_NC_1 misura float", 30: "M_SP_TB_1 segnale singolo con tempo", 36: "M_ME_TF_1 misura float con tempo", 45: "C_SC_NA_1 comando singolo", 50: "C_SE_NC_1 setpoint float", 100: "C_IC_NA_1 interrogazione generale", 103: "C_CS_NA_1 sincronizzazione orologio" };
+const CAUSES = { 1: "periodica", 3: "spontanea", 5: "richiesta", 6: "attivazione", 7: "conferma di attivazione", 10: "terminazione attivazione", 20: "risposta a interrogazione generale", 44: "TypeID sconosciuto", 47: "IOA sconosciuto" };
+const f32le = v => { const b = new ArrayBuffer(4); new DataView(b).setFloat32(0, v, true); return Array.from(new Uint8Array(b)); };
+const rf32le = (a, i) => new DataView(new Uint8Array(a.slice(i, i + 4)).buffer).getFloat32(0, true);
+const apdu = (ctrl, asdu = []) => [0x68, ctrl.length + asdu.length, ...ctrl, ...asdu];
+const uF = fn => apdu([fn, 0, 0, 0]);
+const sF = nr => apdu([1, 0, (nr << 1) & 0xFF, nr >> 7]);
+const iF = (ns, nr, asdu) => apdu([(ns << 1) & 0xFF, ns >> 7, (nr << 1) & 0xFF, nr >> 7], asdu);
+const hdr = (type, cause, ca) => [type, 1, cause, 0, ca & 0xFF, ca >> 8];
+const ioa = a => [a & 0xFF, (a >> 8) & 0xFF, (a >> 16) & 0xFF];
+const qual = q => { const f = [[1, "OV overflow"], [0x10, "BL bloccato"], [0x20, "SB sostituito"], [0x40, "NT non aggiornato"], [0x80, "IV NON VALIDO"]].filter(([b]) => q & b).map(x => x[1]); return f.length ? f.join(", ") : "buona"; };
+function decode104(f) {
+  const L = [];
+  if (f[0] !== 0x68) return ["Il primo byte deve essere 0x68: questo non è un APDU IEC 104."];
+  if (f.length < 6) return ["APDU troppo corto: servono almeno 6 byte."];
+  const [c1, c2, c3, c4] = f.slice(2, 6);
+  L.push(`APCI: start 0x68, lunghezza ${f[1]}${f[1] !== f.length - 2 ? ` (attenzione: dopo il campo ci sono ${f.length - 2} byte)` : ""}`);
+  if ((c1 & 1) === 0) L.push(`Formato I (dati numerati): N(S) = ${(c1 >> 1) | (c2 << 7)}, N(R) = ${(c3 >> 1) | (c4 << 7)}`);
+  else if ((c1 & 3) === 1) { const nr = (c3 >> 1) | (c4 << 7); L.push(`Formato S (solo conferma): N(R) = ${nr}, ricevuti i messaggi fino a ${nr - 1}`); return L; }
+  else { L.push(`Formato U: ${U_FN[c1] || "0x" + hex2(c1)}`); return L; }
+  const a = f.slice(6);
+  if (a.length < 9) { L.push("ASDU incompleto."); return L; }
+  const type = a[0], vsq = a[1], cot = a[2], ca = a[4] | (a[5] << 8), cause = cot & 0x3F, io = a[6] | (a[7] << 8) | (a[8] << 16), el = a.slice(9);
+  L.push(`ASDU: TypeID ${type} (${TYPES[type] || "?"})`);
+  L.push(`  oggetti ${vsq & 0x7F}, sequenza ${vsq & 0x80 ? "sì" : "no"}`);
+  L.push(`  causa ${cause} (${CAUSES[cause] || "?"})${cot & 0x40 ? " NEGATIVA" : ""}${cot & 0x80 ? " TEST" : ""}, originatore ${a[3]}, indirizzo comune ${ca}`);
+  if (type === 13 && el.length >= 5) L.push(`  IOA ${io}: valore ${rf32le(el, 0).toLocaleString("it-IT", { maximumFractionDigits: 3 })}, qualità ${qual(el[4])}`);
+  else if (type === 50 && el.length >= 5) L.push(`  IOA ${io}: setpoint ${rf32le(el, 0).toLocaleString("it-IT", { maximumFractionDigits: 3 })}, ${el[4] & 0x80 ? "SELECT" : "EXECUTE"}`);
+  else if (type === 1 && el.length >= 1) L.push(`  IOA ${io}: stato ${el[0] & 1 ? "ON" : "OFF"}, qualità ${qual(el[0] & 0xF0)}`);
+  else if (type === 100 && el.length >= 1) L.push(`  IOA ${io}: QOI ${el[0]}${el[0] === 20 ? " (interrogazione di stazione)" : ""}`);
+  else L.push(`  IOA ${io}: elemento ${hexs(el)}`);
+  return L;
+}
+function seg104(f) {
+  const s = [{ b: f.slice(0, 2), c: "mbap", l: "Start, lunghezza" }, { b: f.slice(2, 6), c: "mbap", l: "Controllo" }];
+  if (f.length > 6) { s.push({ b: [f[6]], c: "fc", l: "TypeID" }, { b: [f[7]], c: "addr", l: "VSQ" }, { b: f.slice(8, 10), c: "addr", l: "Causa, orig." }, { b: f.slice(10, 12), c: "addr", l: "Ind. comune" }, { b: f.slice(12, 15), c: "addr", l: "IOA" }, { b: f.slice(15), c: "data", l: "Elemento" }); }
+  return s;
+}
+function initLab4() {
+  const CA = 1;
+  const sess = [
+    ["Centro → impianto: apro il flusso dati", uF(0x07)],
+    ["Impianto → centro: confermo", uF(0x0B)],
+    ["Centro → impianto: interrogazione generale, mandami tutto", iF(0, 0, [...hdr(100, 6, CA), ...ioa(0), 20])],
+    ["Impianto → centro: potenza attiva al POI = 4321,5 kW", iF(0, 1, [...hdr(13, 20, CA), ...ioa(1001), ...f32le(4321.5), 0])],
+    ["Impianto → centro: interruttore generale chiuso", iF(1, 1, [...hdr(1, 20, CA), ...ioa(2001), 1])],
+    ["Impianto → centro: fine dell'interrogazione generale", iF(2, 1, [...hdr(100, 10, CA), ...ioa(0), 20])],
+    ["Centro → impianto: setpoint limite di potenza 3000 kW", iF(1, 3, [...hdr(50, 6, CA), ...ioa(5001), ...f32le(3000), 0])],
+    ["Impianto → centro: conferma di attivazione del setpoint", iF(3, 2, [...hdr(50, 7, CA), ...ioa(5001), ...f32le(3000), 0])],
+    ["Impianto → centro: la potenza è scesa, invio spontaneo", iF(4, 2, [...hdr(13, 3, CA), ...ioa(1001), ...f32le(2998.7), 0])],
+    ["Centro → impianto: confermo i tuoi messaggi da 0 a 4", sF(5)],
+    ["Nessun traffico per un po': test del collegamento", uF(0x43)],
+  ];
+  document.getElementById("iec-session").innerHTML = sess.map(([t, f]) =>
+    `<div class="step"><span class="who">${t}</span><div class="bytes">${renderSegments(seg104(f), 64)}</div><p class="decoded" style="margin:0">${decode104(f).join("\n")}</p></div>`).join("");
+  const inp = document.getElementById("iec-in"), out = document.getElementById("iec-out");
+  const upd = () => { try { out.textContent = decode104(parseHex(inp.value)).join("\n"); } catch (e) { out.textContent = e.message; } };
+  inp.addEventListener("input", upd); upd();
+}
+
+/* ======================= BOOT ======================= */
+const PAGE_T0 = now();
+buildNav();
+window.addEventListener("hashchange", route);
+route();
+initLab3(); initLab4(); initLab1(); initLab2();
+</script>
