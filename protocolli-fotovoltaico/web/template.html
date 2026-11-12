@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
 /* Layout: quaderno tecnico a due colonne (indice fisso + contenuto), una colonna su telefono.
    Colore: carta fredda, inchiostro blu-ardesia, ambra solare come accento, colori per campo dei byte. */
@@ -28,6 +28,7 @@
   --font-display: "Barlow Semi Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
   --font-body: "IBM Plex Sans", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -137,6 +138,27 @@ th { font-weight: 600; font-size: .78rem; text-transform: uppercase; letter-spac
 tr:last-child td { border-bottom: 0; }
 td { font-variant-numeric: tabular-nums; }
 
+.chapter { font-family: var(--font-serif); font-size: 1.08rem; line-height: 1.7; }
+.chapter table, .chapter pre, .chapter code, .chapter summary, .chapter .chapnum { font-family: var(--font-body); }
+.chapter pre.code, .chapter code { font-family: var(--font-mono); }
+.chapter table { font-size: .9rem; line-height: 1.5; }
+.chapnum { font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; color: var(--accent); font-weight: 600; margin-bottom: 6px; }
+.chapter p.goals { font-family: var(--font-body); font-size: .98rem; line-height: 1.6; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+.chapter blockquote.box { font-family: var(--font-body); font-size: .97rem; line-height: 1.6; border-radius: 8px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); }
+.chapter blockquote.box > p:first-child strong:first-child { display: block; font-size: .74rem; text-transform: uppercase; letter-spacing: .09em; margin-bottom: 4px; }
+.chapter blockquote.box-esempio { background: var(--wire-soft); border-color: transparent; }
+.chapter blockquote.box-esempio > p:first-child strong:first-child { color: var(--wire); }
+.chapter blockquote.box-attenzione { background: var(--bad-soft); border-color: transparent; }
+.chapter blockquote.box-attenzione > p:first-child strong:first-child { color: var(--bad); }
+.chapter blockquote.box-ricorda { background: var(--accent-soft); border-color: transparent; }
+.chapter blockquote.box-ricorda > p:first-child strong:first-child { color: var(--accent); }
+.chapter blockquote.box-prova { background: var(--good-soft); border-color: transparent; }
+.chapter blockquote.box-prova > p:first-child strong:first-child { color: var(--good); }
+.chapter blockquote .tbl { background: var(--surface); }
+.chapter details { font-family: var(--font-body); font-size: .95rem; margin: -4px 0 18px; border-left: 3px solid var(--line); padding: 2px 0 2px 12px; }
+.chapter details summary { cursor: pointer; font-weight: 600; color: var(--wire); }
+.chapter details[open] summary { margin-bottom: 6px; }
+.chapter details p { margin: 6px 0; }
 .pager { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); max-width: 46rem; }
 .pager a { text-decoration: none; font-weight: 600; }
 .pager small { display: block; color: var(--muted); font-weight: 400; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; }
@@ -261,33 +283,20 @@ td.nd { color: var(--muted); }
     <!-- ===================== HOME ===================== -->
     <section class="view" id="v-percorso">
       <div class="hero">
-        <div class="eyebrow">Percorso di studio</div>
+        <div class="eyebrow">Un libro di studio, dalle basi</div>
         <h1>Dal cavo RS-485 al controllore centrale d'impianto</h1>
-        <p>Come comunicano inverter, contatori, datalogger, portali di monitoraggio e controllori d'impianto. Cinque lezioni, un laboratorio che gira nel browser ed esercizi con soluzione.</p>
+        <p>Come comunicano inverter, contatori, datalogger, portali di monitoraggio e controllori d'impianto, spiegato partendo da zero: dodici capitoli con esempi svolti e domande di verifica, un laboratorio che gira nel browser ed esercizi con soluzione.</p>
       </div>
       <div class="frame-demo" aria-label="Esempio di frame Modbus TCP">
         <div class="bytes" id="home-frame"></div>
-        <div class="cap">Una vera richiesta Modbus TCP: «leggi 50 registri dall'indirizzo 40072», cioè i dati dell'inverter nel modello SunSpec 103. Alla fine del corso saprai leggerla a colpo d'occhio.</div>
+        <div class="cap">Una vera richiesta Modbus TCP: «leggi 50 registri dall'indirizzo 40072», cioè i dati dell'inverter nel modello SunSpec 103. Dopo il capitolo 5 saprai leggerla byte per byte.</div>
       </div>
-      <ol class="path">
-        <li><a href="#fondamenti"><span class="num">01</span><span class="t">Fondamenti</span><span class="d">Architettura di un impianto, livelli, RS-485, polling contro eventi, trappole nei dati</span></a></li>
-        <li><a href="#modbus"><span class="num">02</span><span class="t">Modbus RTU e TCP</span><span class="d">Frame byte per byte, function code, eccezioni, CRC, gateway, buone pratiche</span></a></li>
-        <li><a href="#sunspec"><span class="num">03</span><span class="t">SunSpec</span><span class="d">Mappe standard degli inverter, discovery, scale factor, modelli 1, 103 e 123</span></a></li>
-        <li><a href="#monitoraggio"><span class="num">04</span><span class="t">Portali di monitoraggio</span><span class="d">Datalogger, HTTPS, MQTT, SFTP, API REST, KPI e qualità del dato</span></a></li>
-        <li><a href="#controllo"><span class="num">05</span><span class="t">Controllore d'impianto e rete</span><span class="d">PPC e CCI, IEC 60870-5-104, IEC 61850, CEI 0-16 Allegati O e T</span></a></li>
-        <li><a href="#lab-inverter"><span class="num">06</span><span class="t">Laboratorio</span><span class="d">Inverter SunSpec simulato, controllore d'impianto, Modbus RTU, IEC 104</span></a></li>
-        <li><a href="#esercizi"><span class="num">07</span><span class="t">Esercizi</span><span class="d">Otto esercizi guidati sul laboratorio, con soluzione</span></a></li>
-      </ol>
-      <p class="note">Consiglio: dopo ogni lezione apri il laboratorio e fai l'esercizio corrispondente. I protocolli si capiscono davvero guardando i frame. Il laboratorio simula tutto nel browser e non si collega a nessun impianto reale.</p>
+      <ol class="path" id="toc"></ol>
+      <p class="note">Leggi i capitoli in ordine: ognuno usa solo concetti spiegati prima. Quando trovi un riquadro «Prova», apri il laboratorio. Il laboratorio simula tutto nel browser e non si collega a nessun impianto reale.</p>
     </section>
 
-    <!-- ===================== LESSONS ===================== -->
-    <section class="view prose" id="v-fondamenti" hidden><!--LESSON:fondamenti--></section>
-    <section class="view prose" id="v-modbus" hidden><!--LESSON:modbus--></section>
-    <section class="view prose" id="v-sunspec" hidden><!--LESSON:sunspec--></section>
-    <section class="view prose" id="v-monitoraggio" hidden><!--LESSON:monitoraggio--></section>
-    <section class="view prose" id="v-controllo" hidden><!--LESSON:controllo--></section>
-    <section class="view prose" id="v-glossario" hidden><!--LESSON:glossario--></section>
+    <!-- ===================== CHAPTERS ===================== -->
+<!--CHAPTERS-->
 
     <!-- ===================== LAB: shared head ===================== -->
     <div id="labhead" class="labhead" hidden>
@@ -552,22 +561,25 @@ td.nd { color: var(--muted); }
 <script>
 "use strict";
 /* ======================= NAVIGATION ======================= */
+const CHAPTERS = /*CHAPTERS_JSON*/;
 const NAV = [
-  { id: "percorso", n: "", t: "Percorso" },
-  { group: "Lezioni" },
-  { id: "fondamenti", n: "1", t: "Fondamenti" },
-  { id: "modbus", n: "2", t: "Modbus RTU e TCP" },
-  { id: "sunspec", n: "3", t: "SunSpec" },
-  { id: "monitoraggio", n: "4", t: "Monitoraggio" },
-  { id: "controllo", n: "5", t: "Controllo e rete" },
+  { id: "percorso", n: "", t: "Indice" },
+  { group: "Il libro" },
+  ...CHAPTERS.map(c => ({ id: c.id, n: c.n, t: c.short })),
   { group: "Pratica" },
   { id: "lab-inverter", n: "L", t: "Laboratorio", match: /^lab-/ },
   { id: "esercizi", n: "E", t: "Esercizi" },
-  { id: "glossario", n: "G", t: "Glossario e risorse" },
 ];
-const LESSONS = ["fondamenti", "modbus", "sunspec", "monitoraggio", "controllo"];
-const VIEWS = ["percorso", ...LESSONS, "lab-inverter", "lab-ppc", "lab-rtu", "lab-iec104", "esercizi", "glossario"];
-const TITLES = { fondamenti: "Fondamenti", modbus: "Modbus RTU e TCP", sunspec: "SunSpec", monitoraggio: "Portali di monitoraggio", controllo: "Controllore d'impianto e rete" };
+const LESSONS = CHAPTERS.map(c => c.id);
+const VIEWS = ["percorso", ...LESSONS, "lab-inverter", "lab-ppc", "lab-rtu", "lab-iec104", "esercizi"];
+const TITLES = Object.fromEntries(CHAPTERS.map(c => [c.id, c.title]));
+
+function buildToc() {
+  document.getElementById("toc").innerHTML = CHAPTERS.map(c =>
+    `<li><a href="#${c.id}"><span class="num">${c.n.padStart(2, "0")}</span><span class="t">${c.title}</span><span class="d">${c.desc}</span></a></li>`).join("") +
+    `<li><a href="#lab-inverter"><span class="num">L</span><span class="t">Laboratorio</span><span class="d">Inverter SunSpec simulato, controllore d'impianto, Modbus RTU, IEC 104</span></a></li>` +
+    `<li><a href="#esercizi"><span class="num">E</span><span class="t">Esercizi</span><span class="d">Otto esercizi guidati sul laboratorio, con soluzione</span></a></li>`;
+}
 
 function buildNav() {
   const side = document.getElementById("sidenav"), top = document.getElementById("topnav");
@@ -602,8 +614,8 @@ function route() {
   const i = LESSONS.indexOf(v);
   if (i >= 0) {
     const prev = i > 0 ? LESSONS[i - 1] : null, next = i < LESSONS.length - 1 ? LESSONS[i + 1] : null;
-    pager.innerHTML = (prev ? `<a href="#${prev}"><small>Precedente</small>${TITLES[prev]}</a>` : `<a href="#percorso"><small>Indice</small>Percorso</a>`) +
-      (next ? `<a href="#${next}" style="text-align:right"><small>Successiva</small>${TITLES[next]}</a>` : `<a href="#lab-inverter" style="text-align:right"><small>Ora la pratica</small>Laboratorio</a>`);
+    pager.innerHTML = (prev ? `<a href="#${prev}"><small>Capitolo precedente</small>${TITLES[prev]}</a>` : `<a href="#percorso"><small>Torna a</small>Indice</a>`) +
+      (next ? `<a href="#${next}" style="text-align:right"><small>Capitolo successivo</small>${TITLES[next]}</a>` : `<a href="#lab-inverter" style="text-align:right"><small>Ora la pratica</small>Laboratorio</a>`);
     pager.hidden = false;
   } else pager.hidden = true;
   const cur = document.querySelector("#topnav [aria-current]");
@@ -1149,6 +1161,7 @@ function initLab4() {
 /* ======================= BOOT ======================= */
 const PAGE_T0 = now();
 buildNav();
+buildToc();
 window.addEventListener("hashchange", route);
 route();
 initLab3(); initLab4(); initLab1(); initLab2();

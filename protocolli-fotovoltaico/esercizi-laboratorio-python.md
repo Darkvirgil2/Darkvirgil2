@@ -1,4 +1,4 @@
-# Esercizi guidati (con il laboratorio)
+# Esercizi con il laboratorio Python
 
 Apri tre terminali nella cartella `lab/`.
 
